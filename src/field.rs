@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 
 use serde::Deserialize;
 
-use crate::{DeserializePathSegment, PathSegment, Z, current_field};
+use crate::{DeserializePathSegment, PathSegment, current_field};
 
 /// Visits a field in a map.
 pub struct FieldVisitor<'query, 'de, D>(pub &'query mut Option<D>, pub PhantomData<&'de ()>);
