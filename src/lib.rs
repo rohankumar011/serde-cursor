@@ -1,3 +1,164 @@
+#![doc = concat!("[![crates.io](https://img.shields.io/crates/v/", env!("CARGO_PKG_NAME"), "?style=flat-square&logo=rust)](https://crates.io/crates/", env!("CARGO_PKG_NAME"), ")")]
+#![doc = concat!("[![docs.rs](https://img.shields.io/docsrs/", env!("CARGO_PKG_NAME"), "?style=flat-square&logo=docs.rs)](https://docs.rs/", env!("CARGO_PKG_NAME"), ")")]
+#![doc = "![license](https://img.shields.io/badge/license-Apache--2.0_OR_MIT-blue?style=flat-square)"]
+#![doc = concat!("![msrv](https://img.shields.io/badge/msrv-", env!("CARGO_PKG_RUST_VERSION"), "-blue?style=flat-square&logo=rust)")]
+//! [![github](https://img.shields.io/github/stars/nik-rev/serde-cursor)](https://github.com/nik-rev/serde-cursor)
+//!
+//! This crate implements a macro that takes a jq-like query as an argument and returns a type implementing [`Deserialize`].
+//!
+//! ```toml
+#![doc = concat!(env!("CARGO_PKG_NAME"), " = ", "\"", env!("CARGO_PKG_VERSION_MAJOR"), ".", env!("CARGO_PKG_VERSION_MINOR"), "\"")]
+//! ```
+//!
+//! # Examples
+//!
+//! The [`Cursor!`] macro makes it extremely easy to extract nested fields from data.
+//!
+//! ## Get version from `Cargo.toml`
+//!
+//! ```
+//! # mod fs { fn read_to_string(_: &str) -> String { String::new() } }
+//! use serde_cursor::Cursor;
+//!
+//! let data = fs::read_to_string("Cargo.toml")?;
+//!
+//! let version: String = toml::from_str::<Cursor!(workspace.package.version)>(&data)?.0;
+//! ```
+//!
+//! **Without `serde_cursor`**:
+//!
+//! ```
+//! # mod fs { fn read_to_string(_: &str) -> String { String::new() } }
+//! use serde::Deserialize;
+//!
+//! #[derive(Deserialize)]
+//! struct CargoToml {
+//!     workspace: Workspace
+//! }
+//!
+//! #[derive(Deserialize)]
+//! struct Workspace {
+//!     package: Package
+//! }
+//!
+//! #[derive(Deserialize)]
+//! struct Workspace {
+//!     version: String
+//! }
+//!
+//! let data = fs::read_to_string("Cargo.toml")?;
+//!
+//! let version = toml::from_str::<CargoToml>(&data)?.workspace.package.version;
+//! ```
+//!
+//! ## Get all dependencies from `Cargo.lock`
+//!
+//! ```
+//! # mod fs { fn read_to_string(_: &str) -> String { String::new() } }
+//! use serde_cursor::Cursor;
+//!
+//! let file = fs::read_to_string("Cargo.lock")?;
+//!
+//! let packages: Vec<String> = toml::from_str::<Cursor!(package.*.name)>(&file)?.0;
+//! ```
+//!
+//! **Without `serde_cursor`**:
+//!
+//! ```
+//! # mod fs { fn read_to_string(_: &str) -> String { String::new() } }
+//! use serde::Deserialize;
+//!
+//! #[derive(Deserialize)]
+//! struct CargoLock {
+//!     package: Vec<Package>
+//! }
+//!
+//! #[derive(Deserialize)]
+//! struct Package {
+//!     name: String
+//! }
+//!
+//! let file = fs::read_to_string("Cargo.lock")?;
+//!
+//! let packages = toml::from_str::<CargoLock>(&file)?
+//!     .package
+//!     .into_iter()
+//!     .map(|pkg| pkg.name)
+//!     .collect::<Vec<_>>();
+//! ```
+//!
+//! # `serde_cursor` vs `serde_query`
+//!
+//! `serde_query` is significantly more verbose.
+//!
+//! ## Single query
+//!
+//! `serde_cursor`:
+//!
+//! ```
+//! # mod fs { fn read_to_string(_: &str) -> String { String::new() } }
+//! use serde_cursor::Cursor;
+//!
+//! let data = fs::read_to_string("data.json")?;
+//!
+//! let authors: Vec<String> = serde_json::from_str::<Query!(commits.*.author)>(&data)?.0;
+//! ```
+//!
+//! `serde_query`:
+//!
+//! ```
+//! # mod fs { fn read_to_string(_: &str) -> String { String::new() } }
+//! use serde_query::Deserialize;
+//!
+//! #[derive(Deserialize)]
+//! struct Data {
+//!     #[query(".commits.[].author")]
+//!     authors: Vec<String>,
+//! }
+//!
+//! let data = fs::read_to_string("data.json")?;
+//! let data: Data = serde_json::from_str(&data)?;
+//!
+//! let authors = data.authors;
+//! ```
+//!
+//! ## Storing queries in a `struct`
+//!
+//! `serde_cursor`:
+//!
+//! ```
+//! use serde::Deserialize;
+//! use serde_cursor::Cursor;
+//!
+//! #[derive(Deserialize)]
+//! struct Data {
+//!     authors: Cursor!(commits.*.author: Vec<String>),
+//!     count: Cursor!(count: usize),
+//! }
+//!
+//! let data = fs::read_to_string("data.json")?;
+//!
+//! let data: Data = serde_json::from_str(&data)?;
+//! ```
+//!
+//! `serde_query`:
+//!
+//! ```
+//! use serde_query::Deserialize;
+//!
+//! #[derive(Deserialize)]
+//! struct Data {
+//!     #[query(".commits.[].author")]
+//!     authors: Vec<String>,
+//!     #[query(".count")]
+//!     count: usize,
+//! }
+//!
+//! let data = fs::read_to_string("data.json")?;
+//!
+//! let data: Data = serde_json::from_str(&data)?;
+//! ```
+
 use core::fmt;
 use core::marker::PhantomData;
 use serde_core::de::{
@@ -120,7 +281,7 @@ where
 }
 
 #[diagnostic::on_unimplemented(
-    message = "`{T}` doesn't implement `serde_cursor::Collection`",
+    message = "`{T}` doesn't implement `serde_cursor::Sequence`",
     note = "try: `Vec<{T}>`"
 )]
 #[doc(hidden)]
