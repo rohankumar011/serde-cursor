@@ -48,7 +48,7 @@ use crate::path;
 use crate::punct;
 
 /// Encodes a string literal into a nested type-level representation:
-/// FieldName<(StrLen<N>, ( ... nested tuples of characters ... ))>
+/// `FieldName<(StrLen<N>, ( ... nested tuples of characters ... ))>`
 pub fn encode(value: &str, span: Span) -> TokenStream {
     // encoding of empty string
     if value.is_empty() {
