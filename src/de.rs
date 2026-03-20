@@ -96,7 +96,13 @@ where
         match result {
             Some(val) => Ok(val),
             // This allows Option<T> to become None instead of failing.
-            None => T::deserialize(serde_core::de::value::UnitDeserializer::new()),
+            None => T::deserialize(serde_core::de::value::UnitDeserializer::<A::Error>::new())
+                .map_err(|_| {
+                    <A::Error as serde_core::de::Error>::custom(format!(
+                        "missing field '{}'",
+                        self.target
+                    ))
+                }),
         }
     }
 }
@@ -150,7 +156,10 @@ where
     where
         D: Deserializer<'de>,
     {
-        match S::VALUE {
+        use serde_core::de::Error;
+        let segment = S::VALUE;
+
+        let result = match segment {
             PathSegment::Field(name) => deserializer.deserialize_map(FieldVisitor::<P, T> {
                 target: name,
                 _marker: PhantomData,
@@ -159,7 +168,30 @@ where
                 target_index: index,
                 _marker: PhantomData,
             }),
-        }
+        };
+
+        // wrap the error with the current path segment
+        result.map_err(|e| {
+            let err_str = e.to_string();
+            let path_str = match segment {
+                PathSegment::Field(name) => format!(".{}", name),
+                PathSegment::Index(i) => format!("[{}]", i),
+            };
+
+            // if the error is a nested path (starts with . or [), just join them
+            if err_str.starts_with('.') || err_str.starts_with('[') {
+                D::Error::custom(format!("{}{}", path_str, err_str))
+            }
+            // if this is the "top" level of the path, ensure it starts with a dot
+            else {
+                let prefix = if path_str.starts_with('[') {
+                    format!(".{}", path_str)
+                } else {
+                    path_str
+                };
+                D::Error::custom(format!("{}: {}", prefix, err_str))
+            }
+        })
     }
 }
 
@@ -177,9 +209,12 @@ where
     where
         D: Deserializer<'de>,
     {
-        deserializer.deserialize_seq(WildcardVisitor::<P, C> {
-            _marker: PhantomData,
-        })
+        use serde_core::de::Error;
+        deserializer
+            .deserialize_seq(WildcardVisitor::<P, C> {
+                _marker: PhantomData,
+            })
+            .map_err(|e| D::Error::custom(format!("{}", e)))
     }
 }
 
@@ -199,8 +234,13 @@ where
         A: SeqAccess<'de>,
     {
         let mut items = C::default();
-        while let Some(item) = seq.next_element_seed(PathSeed::<P, C::Item>(PhantomData))? {
+        let mut index = 0;
+        while let Some(item) = seq
+            .next_element_seed(PathSeed::<P, C::Item>(PhantomData))
+            .map_err(|e| serde_core::de::Error::custom(format!("[{}]{}", index, e)))?
+        {
             items.push(item);
+            index += 1;
         }
         Ok(items)
     }
