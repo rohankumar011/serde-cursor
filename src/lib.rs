@@ -1,8 +1,8 @@
+use core::fmt;
+use core::marker::PhantomData;
 use serde_core::de::{
     Deserialize, DeserializeSeed, Deserializer, IgnoredAny, MapAccess, SeqAccess, Visitor,
 };
-use std::fmt;
-use std::marker::PhantomData;
 
 /// The [`Cursor!`] macro
 #[doc(inline)]
@@ -17,7 +17,7 @@ pub struct Cursor<T, P> {
 impl<'de, T, P> Deserialize<'de> for Cursor<T, P>
 where
     T: Deserialize<'de>,
-    P: PathNavigator<'de, T>,
+    P: Path<'de, T>,
 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -60,38 +60,78 @@ pub trait ConstPathSegment {
 #[doc(hidden)]
 pub struct Nil;
 #[doc(hidden)]
-pub struct Cons<S, T>(PhantomData<(S, T)>);
-
+pub struct Cons<S, P>(PhantomData<(S, P)>);
 #[doc(hidden)]
-pub trait Path {
-    fn head() -> Option<PathSegment>;
-    type Tail: Path;
+pub struct Wildcard;
+
+struct WildcardVisitor<P, C> {
+    _marker: PhantomData<(P, C)>,
 }
 
-#[doc(hidden)]
-impl Path for Nil {
-    fn head() -> Option<PathSegment> {
-        None
-    }
-    type Tail = Nil;
+pub trait Sequence: Default {
+    type Item;
+    fn push(&mut self, item: Self::Item);
 }
 
-impl<S: ConstPathSegment, P: Path> Path for Cons<S, P> {
-    type Tail = P;
-    fn head() -> Option<PathSegment> {
-        Some(S::VALUE)
+impl<T> Sequence for Vec<T> {
+    type Item = T;
+    fn push(&mut self, item: Self::Item) {
+        self.push(item);
     }
 }
 
+impl<'de, P, C> Visitor<'de> for WildcardVisitor<P, C>
+where
+    C: Sequence,
+    P: Path<'de, C::Item>,
+    C::Item: Deserialize<'de>,
+{
+    type Value = C;
+    fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_str("a sequence")
+    }
+
+    fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+    where
+        A: SeqAccess<'de>,
+    {
+        let mut items = C::default();
+        while let Some(item) = seq.next_element_seed(PathSeed::<P, C::Item>(PhantomData))? {
+            items.push(item);
+        }
+        Ok(items)
+    }
+}
+
+impl<'de, P, C> Path<'de, C> for Cons<Wildcard, P>
+where
+    C: Sequence,
+    P: Path<'de, C::Item>,
+    C::Item: Deserialize<'de>,
+{
+    fn navigate<D>(deserializer: D) -> Result<C, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_seq(WildcardVisitor::<P, C> {
+            _marker: PhantomData,
+        })
+    }
+}
+
+#[diagnostic::on_unimplemented(
+    message = "`{T}` doesn't implement `serde_cursor::Collection`",
+    note = "try: `Vec<{T}>`"
+)]
 #[doc(hidden)]
-pub trait PathNavigator<'de, T>: Path {
+pub trait Path<'de, T> {
     fn navigate<D>(deserializer: D) -> Result<T, D::Error>
     where
         D: Deserializer<'de>;
 }
 
 // base case: we are at the target property
-impl<'de, T: Deserialize<'de>> PathNavigator<'de, T> for Nil {
+impl<'de, T: Deserialize<'de>> Path<'de, T> for Nil {
     fn navigate<D>(deserializer: D) -> Result<T, D::Error>
     where
         D: Deserializer<'de>,
@@ -101,10 +141,10 @@ impl<'de, T: Deserialize<'de>> PathNavigator<'de, T> for Nil {
 }
 
 // step case: we are still digging into the object
-impl<'de, S, P, T> PathNavigator<'de, T> for Cons<S, P>
+impl<'de, S, P, T> Path<'de, T> for Cons<S, P>
 where
     S: ConstPathSegment,
-    P: PathNavigator<'de, T>,
+    P: Path<'de, T>,
     T: Deserialize<'de>,
 {
     fn navigate<D>(deserializer: D) -> Result<T, D::Error>
@@ -124,6 +164,53 @@ where
     }
 }
 
+struct SequenceFieldVisitor<P, T, V> {
+    target: &'static str,
+    _marker: PhantomData<(P, T, V)>,
+}
+
+impl<'de, P, T, V> Visitor<'de> for SequenceFieldVisitor<P, T, V>
+where
+    P: Path<'de, T>,
+    T: Deserialize<'de>,
+    V: Seq<Item = T>,
+{
+    type Value = V;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        todo!()
+    }
+
+    fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+    where
+        A: SeqAccess<'de>,
+    {
+        let mut values = V::default();
+
+        while let Some(value) =
+            seq.next_element_seed(PathSeed2::<P, T>(self.target, PhantomData))?
+        {
+            V::push(&mut values, value);
+        }
+
+        Ok(values)
+    }
+}
+
+trait Seq: Default {
+    type Item;
+
+    fn push(&mut self, value: Self::Item);
+}
+
+impl<'de, T: Deserialize<'de>> Seq for Vec<T> {
+    type Item = T;
+
+    fn push(&mut self, value: Self::Item) {
+        Vec::push(self, value);
+    }
+}
+
 struct SequenceVisitor<P, T> {
     target_index: usize,
     _marker: PhantomData<(P, T)>,
@@ -131,7 +218,7 @@ struct SequenceVisitor<P, T> {
 
 impl<'de, P, T> Visitor<'de> for SequenceVisitor<P, T>
 where
-    P: PathNavigator<'de, T>,
+    P: Path<'de, T>,
     T: Deserialize<'de>,
 {
     type Value = T;
@@ -180,7 +267,7 @@ struct FieldVisitor<P, D> {
 
 impl<'de, P, T> Visitor<'de> for FieldVisitor<P, T>
 where
-    P: PathNavigator<'de, T>,
+    P: Path<'de, T>,
     T: Deserialize<'de>,
 {
     type Value = T;
@@ -209,18 +296,38 @@ where
     }
 }
 
-struct PathSeed<P, D>(PhantomData<(P, D)>);
+struct PathSeed2<P, T>(&'static str, PhantomData<(P, T)>);
 
-impl<'de, P, D> DeserializeSeed<'de> for PathSeed<P, D>
+impl<'de, P, T> DeserializeSeed<'de> for PathSeed2<P, T>
 where
-    P: PathNavigator<'de, D>,
-    D: Deserialize<'de>,
+    P: Path<'de, T>,
+    T: Deserialize<'de>,
 {
-    type Value = D;
+    type Value = T;
 
-    fn deserialize<De>(self, deserializer: De) -> Result<Self::Value, De::Error>
+    fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
     where
-        De: Deserializer<'de>,
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_map(FieldVisitor::<P, T> {
+            target: self.0,
+            _marker: PhantomData,
+        })
+    }
+}
+
+struct PathSeed<P, T>(PhantomData<(P, T)>);
+
+impl<'de, P, T> DeserializeSeed<'de> for PathSeed<P, T>
+where
+    P: Path<'de, T>,
+    T: Deserialize<'de>,
+{
+    type Value = T;
+
+    fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+    where
+        D: Deserializer<'de>,
     {
         P::navigate(deserializer)
     }

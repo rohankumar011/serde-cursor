@@ -11,21 +11,33 @@ fn lol() {
         }
     });
 
-    type X = ::serde_cursor::Cursor<
-        bool,
-        ::serde_cursor::Cons<
-            ::serde_cursor::FieldName<(::serde_cursor::StrLen<1>, ::serde_cursor::C1<'a'>)>,
-            ::serde_cursor::Cons<
-                ::serde_cursor::FieldName<(::serde_cursor::StrLen<0>, ())>,
-                ::serde_cursor::Cons<
-                    ::serde_cursor::FieldName<(::serde_cursor::StrLen<1>, ::serde_cursor::C1<'c'>)>,
-                    ::serde_cursor::Cons<::serde_cursor::Index<2>, ::serde_cursor::Nil>,
-                >,
-            >,
-        >,
-    >;
+    let lol = json!({
+        "contentJsons": {
+            "anchors": [
+                {
+                    "name": "sells",
+                    "json": {
+                        "elements": [49, 10, 80],
+                    }
+            },
+            {
+                "name": "prices",
+                "json": {
+                    "elements": [49, 89, 29],
+                }
+            },
+            ]
+        }
+    });
 
-    let x = serde_json::from_value::<Cursor!(a."".c.2: bool)>(value)
+    let x = serde_json::from_value::<Cursor!(contentJsons.anchors.*.name: Vec<String>)>(lol)
         .unwrap()
         .value;
+
+    // let x = serde_json::from_value::<Cursor!(a."hello world".c.2: bool)>(value)
+    //     .unwrap()
+    //     .value;
+
+    dbg!(x);
+    panic!();
 }

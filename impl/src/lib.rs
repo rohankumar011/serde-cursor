@@ -22,7 +22,7 @@ pub fn Cursor(input: TokenStream) -> TokenStream {
     // Cursor!(a.0.c: bool)
     //         ^^^^^
     while let Some(tt) = input.peek() {
-        // the "." is not requires for the first path
+        // the "." is not required for the first path
         //
         // Cursor!(a.0.c: bool)
         //         ^
@@ -83,7 +83,7 @@ pub fn Cursor(input: TokenStream) -> TokenStream {
             )
         });
 
-    TokenStream::from_iter(
+    let ts = TokenStream::from_iter(
         [
             punct(':'),
             punct(':'),
@@ -98,10 +98,15 @@ pub fn Cursor(input: TokenStream) -> TokenStream {
         .chain([punct(',')])
         .chain(path)
         .chain([punct('>')]),
-    )
+    );
+
+    // panic!("{}", ts);
+
+    ts
 }
 
 enum PathSegment {
+    Wildcard(Span),
     Field(String, Span),
     Index(u128, Span),
 }
@@ -119,6 +124,7 @@ impl PathSegment {
                 ts.extend([punct('>')]);
                 ts
             }
+            PathSegment::Wildcard(_span) => path([ident("Wildcard")]),
         }
     }
 }
@@ -137,6 +143,11 @@ fn parse_path_segment(
                 unreachable!()
             };
             path_segments.push(PathSegment::Field(field.to_string(), field.span()));
+        }
+        TokenTree::Punct(p) if p.as_char() == '*' => {
+            let span = p.span();
+            let _ = input.next();
+            path_segments.push(PathSegment::Wildcard(span))
         }
         TokenTree::Literal(lit) => {
             match litrs::Literal::from(lit) {
