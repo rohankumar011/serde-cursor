@@ -4,33 +4,71 @@ use serde_core::de::{
 use std::fmt;
 use std::marker::PhantomData;
 
+/// The [`Cursor!`] macro
+#[doc(inline)]
+pub use serde_cursor_impl::Cursor;
+
+#[doc(hidden)]
+pub struct Cursor<T, P> {
+    pub value: T,
+    _path: PhantomData<P>,
+}
+
+impl<'de, T, P> Deserialize<'de> for Cursor<T, P>
+where
+    T: Deserialize<'de>,
+    P: PathNavigator<'de, T>,
+{
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let value = P::navigate(deserializer)?;
+        Ok(Self {
+            value,
+            _path: PhantomData,
+        })
+    }
+}
+
+#[doc(hidden)]
 pub use const_str::C1;
+#[doc(hidden)]
 pub use const_str::C2;
+#[doc(hidden)]
 pub use const_str::C3;
+#[doc(hidden)]
 pub use const_str::C4;
+#[doc(hidden)]
+pub use const_str::ConstStr;
+#[doc(hidden)]
 pub use const_str::StrLen;
 
-pub use crate::const_str::ConstStr;
+mod const_str;
 
-pub mod const_str;
-
+#[doc(hidden)]
 pub enum PathSegment {
     Field(&'static str),
     Index(usize),
 }
 
+#[doc(hidden)]
 pub trait ConstPathSegment {
     const VALUE: PathSegment;
 }
 
+#[doc(hidden)]
 pub struct Nil;
+#[doc(hidden)]
 pub struct Cons<S, T>(PhantomData<(S, T)>);
 
+#[doc(hidden)]
 pub trait Path {
     fn head() -> Option<PathSegment>;
     type Tail: Path;
 }
 
+#[doc(hidden)]
 impl Path for Nil {
     fn head() -> Option<PathSegment> {
         None
@@ -38,46 +76,47 @@ impl Path for Nil {
     type Tail = Nil;
 }
 
-impl<S: ConstPathSegment, T: Path> Path for Cons<S, T> {
-    type Tail = T;
+impl<S: ConstPathSegment, P: Path> Path for Cons<S, P> {
+    type Tail = P;
     fn head() -> Option<PathSegment> {
         Some(S::VALUE)
     }
 }
 
-pub trait PathNavigator<'de, D>: Path {
-    fn navigate<De>(deserializer: De) -> Result<D, De::Error>
+#[doc(hidden)]
+pub trait PathNavigator<'de, T>: Path {
+    fn navigate<D>(deserializer: D) -> Result<T, D::Error>
     where
-        De: Deserializer<'de>;
+        D: Deserializer<'de>;
 }
 
 // base case: we are at the target property
-impl<'de, D: Deserialize<'de>> PathNavigator<'de, D> for Nil {
-    fn navigate<De>(deserializer: De) -> Result<D, De::Error>
+impl<'de, T: Deserialize<'de>> PathNavigator<'de, T> for Nil {
+    fn navigate<D>(deserializer: D) -> Result<T, D::Error>
     where
-        De: Deserializer<'de>,
+        D: Deserializer<'de>,
     {
-        D::deserialize(deserializer)
+        T::deserialize(deserializer)
     }
 }
 
-// Step Case: We are still digging into the object
-impl<'de, S, T, D> PathNavigator<'de, D> for Cons<S, T>
+// step case: we are still digging into the object
+impl<'de, S, P, T> PathNavigator<'de, T> for Cons<S, P>
 where
     S: ConstPathSegment,
-    T: PathNavigator<'de, D>,
-    D: Deserialize<'de>,
+    P: PathNavigator<'de, T>,
+    T: Deserialize<'de>,
 {
-    fn navigate<De>(deserializer: De) -> Result<D, De::Error>
+    fn navigate<D>(deserializer: D) -> Result<T, D::Error>
     where
-        De: Deserializer<'de>,
+        D: Deserializer<'de>,
     {
         match S::VALUE {
-            PathSegment::Field(name) => deserializer.deserialize_map(FieldVisitor::<T, D> {
+            PathSegment::Field(name) => deserializer.deserialize_map(FieldVisitor::<P, T> {
                 target: name,
                 _marker: PhantomData,
             }),
-            PathSegment::Index(index) => deserializer.deserialize_seq(SequenceVisitor::<T, D> {
+            PathSegment::Index(index) => deserializer.deserialize_seq(SequenceVisitor::<P, T> {
                 target_index: index,
                 _marker: PhantomData,
             }),
@@ -85,17 +124,17 @@ where
     }
 }
 
-struct SequenceVisitor<P, D> {
+struct SequenceVisitor<P, T> {
     target_index: usize,
-    _marker: PhantomData<(P, D)>,
+    _marker: PhantomData<(P, T)>,
 }
 
-impl<'de, P, D> Visitor<'de> for SequenceVisitor<P, D>
+impl<'de, P, T> Visitor<'de> for SequenceVisitor<P, T>
 where
-    P: PathNavigator<'de, D>,
-    D: Deserialize<'de>,
+    P: PathNavigator<'de, T>,
+    T: Deserialize<'de>,
 {
-    type Value = D;
+    type Value = T;
 
     fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
@@ -119,9 +158,9 @@ where
             }
         }
 
-        // found the index!, recurse to the next part of the path
+        // found the index, recurse to the next part of the path
         let result = seq
-            .next_element_seed(PathSeed::<P, D>(PhantomData))?
+            .next_element_seed(PathSeed::<P, T>(PhantomData))?
             .ok_or_else(|| {
                 serde_core::de::Error::custom(format!("index {} out of bounds", self.target_index))
             })?;
@@ -139,12 +178,12 @@ struct FieldVisitor<P, D> {
     _marker: PhantomData<(P, D)>,
 }
 
-impl<'de, P, D> Visitor<'de> for FieldVisitor<P, D>
+impl<'de, P, T> Visitor<'de> for FieldVisitor<P, T>
 where
-    P: PathNavigator<'de, D>,
-    D: Deserialize<'de>,
+    P: PathNavigator<'de, T>,
+    T: Deserialize<'de>,
 {
-    type Value = D;
+    type Value = T;
 
     fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "map with field '{}'", self.target)
@@ -155,13 +194,15 @@ where
         A: MapAccess<'de>,
     {
         let mut result = None;
+
         while let Some(key) = map.next_key::<String>()? {
             if key == self.target && result.is_none() {
-                result = Some(map.next_value_seed(PathSeed::<P, D>(PhantomData))?);
+                result = Some(map.next_value_seed(PathSeed::<P, T>(PhantomData))?);
             } else {
                 map.next_value::<IgnoredAny>()?;
             }
         }
+
         result.ok_or_else(|| {
             serde_core::de::Error::custom(format!("field '{}' not found", self.target))
         })
@@ -185,35 +226,17 @@ where
     }
 }
 
-pub struct Cursor<D, P> {
-    pub value: D,
-    _path: PhantomData<P>,
-}
-
-impl<'de, D, P> Deserialize<'de> for Cursor<D, P>
-where
-    D: Deserialize<'de>,
-    P: PathNavigator<'de, D>,
-{
-    fn deserialize<De>(deserializer: De) -> Result<Self, De::Error>
-    where
-        De: Deserializer<'de>,
-    {
-        let value = P::navigate(deserializer)?;
-        Ok(Self {
-            value,
-            _path: PhantomData,
-        })
-    }
-}
-
+#[doc(hidden)]
 pub struct FieldName<S: ConstStr>(PhantomData<S>);
+#[doc(hidden)]
 pub struct Index<const N: usize>;
 
+#[doc(hidden)]
 impl<S: ConstStr> ConstPathSegment for FieldName<S> {
     const VALUE: PathSegment = PathSegment::Field(S::VALUE);
 }
 
+#[doc(hidden)]
 impl<const N: usize> ConstPathSegment for Index<N> {
     const VALUE: PathSegment = PathSegment::Index(N);
 }
