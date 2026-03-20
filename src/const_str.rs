@@ -59,16 +59,16 @@ pub unsafe trait StringBuffer {
 }
 
 /// A unicode scalar value, [`char`], that is 1 byte long.
-pub struct C1<const CH: char>;
+pub struct Char1Byte<const CH: char>;
 
 /// A unicode scalar value, [`char`], that is 2 bytes long.
-pub struct C2<const CH: char>;
+pub struct Char2Byte<const CH: char>;
 
 /// A unicode scalar value, [`char`], that is 3 bytes long.
-pub struct C3<const CH: char>;
+pub struct Char3Byte<const CH: char>;
 
 /// A unicode scalar value, [`char`], that is 4 bytes long.
-pub struct C4<const CH: char>;
+pub struct Char4Byte<const CH: char>;
 
 /// Mask for 1-byte unicode scalar value sequence start
 const TAG_CONT: u8 = 0b1000_0000;
@@ -86,7 +86,7 @@ const TAG_FOUR_B: u8 = 0b1111_0000;
 //
 // - `u8` has no padding bytes and an alignment of 1
 // - Bytes are valid UTF-8
-unsafe impl<const CH: char> StringBuffer for C1<CH> {
+unsafe impl<const CH: char> StringBuffer for Char1Byte<CH> {
     type Type = [u8; 1];
     const BYTES: Self::Type = [CH as u8];
 }
@@ -95,7 +95,7 @@ unsafe impl<const CH: char> StringBuffer for C1<CH> {
 //
 // - `[u8; 2]` has no padding bytes and an alignment of 1
 // - Bytes are valid UTF-8
-unsafe impl<const CH: char> StringBuffer for C2<CH> {
+unsafe impl<const CH: char> StringBuffer for Char2Byte<CH> {
     type Type = [u8; 2];
     const BYTES: Self::Type = [
         ((CH as u32 >> 6) & 0x1F) as u8 | TAG_TWO_B,
@@ -107,7 +107,7 @@ unsafe impl<const CH: char> StringBuffer for C2<CH> {
 //
 // - `[u8; 3]` has no padding bytes and an alignment of 1
 // - Bytes are valid UTF-8
-unsafe impl<const CH: char> StringBuffer for C3<CH> {
+unsafe impl<const CH: char> StringBuffer for Char3Byte<CH> {
     type Type = [u8; 3];
     const BYTES: Self::Type = [
         ((CH as u32 >> 12) & 0x0F) as u8 | TAG_THREE_B,
@@ -120,7 +120,7 @@ unsafe impl<const CH: char> StringBuffer for C3<CH> {
 //
 // - `[u8; 4]` has no padding bytes and an alignment of 1
 // - Bytes are valid UTF-8
-unsafe impl<const CH: char> StringBuffer for C4<CH> {
+unsafe impl<const CH: char> StringBuffer for Char4Byte<CH> {
     type Type = [u8; 4];
     const BYTES: Self::Type = [
         ((CH as u32 >> 18) & 0x07) as u8 | TAG_FOUR_B,

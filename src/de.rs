@@ -93,31 +93,13 @@ where
             }
         }
 
-        result.ok_or_else(|| {
-            serde_core::de::Error::custom(format!("field '{}' not found", self.target))
-        })
+        match result {
+            Some(val) => Ok(val),
+            // This allows Option<T> to become None instead of failing.
+            None => T::deserialize(serde_core::de::value::UnitDeserializer::new()),
+        }
     }
 }
-
-// struct PathSeed2<P, T>(&'static str, PhantomData<(P, T)>);
-
-// impl<'de, P, T> DeserializeSeed<'de> for PathSeed2<P, T>
-// where
-//     P: Path<'de, T>,
-//     T: Deserialize<'de>,
-// {
-//     type Value = T;
-
-//     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
-//     where
-//         D: Deserializer<'de>,
-//     {
-//         deserializer.deserialize_map(FieldVisitor::<P, T> {
-//             target: self.0,
-//             _marker: PhantomData,
-//         })
-//     }
-// }
 
 struct PathSeed<P, T>(PhantomData<(P, T)>);
 
@@ -180,39 +162,6 @@ where
         }
     }
 }
-
-// struct SequenceFieldVisitor<P, T, V> {
-//     target: &'static str,
-//     _marker: PhantomData<(P, T, V)>,
-// }
-
-// impl<'de, P, T, V> Visitor<'de> for SequenceFieldVisitor<P, T, V>
-// where
-//     P: Path<'de, T>,
-//     T: Deserialize<'de>,
-//     V: Seq<Item = T>,
-// {
-//     type Value = V;
-
-//     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-//         formatter.write_fmt(format_args!("sequence of map with field {}", self.target))
-//     }
-
-//     fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-//     where
-//         A: SeqAccess<'de>,
-//     {
-//         let mut values = V::default();
-
-//         while let Some(value) =
-//             seq.next_element_seed(PathSeed2::<P, T>(self.target, PhantomData))?
-//         {
-//             V::push(&mut values, value);
-//         }
-
-//         Ok(values)
-//     }
-// }
 
 struct WildcardVisitor<P, C> {
     _marker: PhantomData<(P, C)>,

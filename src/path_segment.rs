@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use crate::ConstStr;
+use crate::const_str::ConstStr;
 
 pub enum PathSegment {
     Field(&'static str),

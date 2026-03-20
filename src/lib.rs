@@ -203,9 +203,9 @@
 //! # Ok(()) }
 //! ```
 
-mod de;
+pub mod de;
 mod path_segment;
-mod ser;
+pub mod ser;
 
 pub use path_segment::{ConstPathSegment, FieldName, Index, PathSegment};
 
@@ -217,7 +217,20 @@ use core::marker::PhantomData;
 pub use serde_cursor_impl::Cursor;
 
 /// Type returned by the [`Cursor!`] macro.
-pub struct Cursor<T, P>(pub T, #[doc(hidden)] PhantomData<P>);
+pub struct Cursor<T, P>(pub T, #[doc(hidden)] pub PhantomData<P>);
+
+impl<T, P> From<T> for Cursor<T, P> {
+    fn from(value: T) -> Self {
+        Self(value, PhantomData)
+    }
+}
+
+impl<T, P> std::ops::Deref for Cursor<T, P> {
+    type Target = T;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 impl<T: fmt::Debug, P> fmt::Debug for Cursor<T, P> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -272,14 +285,21 @@ impl<T: Ord, P> core::cmp::Ord for Cursor<T, P> {
     }
 }
 
-pub use const_str::C1;
-pub use const_str::C2;
-pub use const_str::C3;
-pub use const_str::C4;
-pub use const_str::ConstStr;
-pub use const_str::StrLen;
+pub mod const_str;
 
-mod const_str;
+// This only exists to make the generated macro output
+// slightly more sane
+
+#[doc(hidden)]
+pub use const_str::Char1Byte as C1;
+#[doc(hidden)]
+pub use const_str::Char2Byte as C2;
+#[doc(hidden)]
+pub use const_str::Char3Byte as C3;
+#[doc(hidden)]
+pub use const_str::Char4Byte as C4;
+#[doc(hidden)]
+pub use const_str::StrLen;
 
 pub struct Nil;
 

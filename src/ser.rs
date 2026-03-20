@@ -113,22 +113,3 @@ where
         P::serialize_nested(source, serializer)
     }
 }
-
-// impl<P, T, C> ToCursor<C> for Cons<Wildcard, P>
-// where
-//     C: IntoIterator<Item = T>,
-//     T: Serialize,
-//     for<'a> &'a C: IntoIterator<Item = &'a T>,
-//     P: ToCursor<T>,
-// {
-//     fn serialize_nested<S>(value: &C, serializer: S) -> Result<S::Ok, S::Error>
-//     where
-//         S: Serializer,
-//     {
-//         let mut seq = serializer.serialize_seq(None)?;
-//         for item in value {
-//             seq.serialize_element(&ToCursorWrapper::<P, T>(item, PhantomData))?;
-//         }
-//         seq.end()
-//     }
-// }
