@@ -1,5 +1,6 @@
 [package]
 name = "serde_cursor"
+description = "serde-compatible streaming data-query language with a jq-like syntax"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
