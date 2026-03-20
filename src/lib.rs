@@ -4,7 +4,7 @@
 #![doc = concat!("![msrv](https://img.shields.io/badge/msrv-", env!("CARGO_PKG_RUST_VERSION"), "-blue?style=flat-square&logo=rust)")]
 //! [![github](https://img.shields.io/github/stars/nik-rev/serde-cursor)](https://github.com/nik-rev/serde-cursor)
 //!
-//! This crate has a macro that takes a jq-like query as an argument and returns a type implementing [`Deserialize`].
+//! This crate has a macro that takes a jq-like query as an argument and returns a type implementing [`Deserialize`](serde_core::Deserialize).
 //!
 //! ```toml
 #![doc = concat!(env!("CARGO_PKG_NAME"), " = ", "\"", env!("CARGO_PKG_VERSION_MAJOR"), ".", env!("CARGO_PKG_VERSION_MINOR"), "\"")]

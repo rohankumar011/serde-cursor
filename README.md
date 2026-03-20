@@ -21,7 +21,7 @@ cargo-reedme: info-end -->
 ![msrv](https://img.shields.io/badge/msrv--blue?style=flat-square&logo=rust)
 [![github](https://img.shields.io/github/stars/nik-rev/serde-cursor)](https://github.com/nik-rev/serde-cursor)
 
-This crate has a macro that takes a jq-like query as an argument and returns a type implementing [`Deserialize`](https://docs.rs/serde_core/1.0.228/serde_core/de/trait.Deserialize.html).
+This crate has a macro that takes a jq-like query as an argument and returns a type implementing [`Deserialize`](https://docs.rs/serde_core/latest/serde_core/de/trait.Deserialize.html).
 
 ```toml
 serde_cursor = "0.1"
@@ -57,7 +57,7 @@ struct Workspace {
 }
 
 #[derive(Deserialize)]
-struct Workspace {
+struct Package {
     version: String
 }
 
@@ -143,8 +143,9 @@ use serde_cursor::Cursor;
 
 #[derive(Deserialize)]
 struct Data {
-    authors: Cursor!(commits.*.author: Vec<String>),
-    count: Cursor!(count: usize),
+    #[serde(rename = "commits")]
+    authors: Cursor!(*.author: Vec<String>),
+    count: usize,
 }
 
 let data = fs::read_to_string("data.json")?;
@@ -172,7 +173,8 @@ let data: Data = serde_json::from_str(&data)?;
 
 ## `serde_with` integration
 
-If `feature = "serde_with"` is enabled, [`struct@Cursor`](https://docs.rs/serde_cursor/latest/serde_cursor/struct.Cursor.html) will implement [`serde_with::DeserializeAs`](https://docs.rs/serde_with/3.18.0/serde_with/de/trait.DeserializeAs.html), meaning you can use it with `#[serde_as]`:
+If `feature = "serde_with"` is enabled, [`Cursor`](https://docs.rs/serde_cursor/latest/serde_cursor/struct.Cursor.html) will implement [`serde_with::DeserializeAs`](https://docs.rs/serde_with/latest/serde_with/de/trait.DeserializeAs.html) and [`serde_with::SerializeAs`](https://docs.rs/serde_with/latest/serde_with/ser/trait.SerializeAs.html),
+meaning you can use it with the `#[serde_as]` attribute:
 
 ```rust
 use serde::{Serialize, Deserialize};
@@ -181,9 +183,27 @@ use serde_cursor::Cursor;
 #[serde_as]
 #[derive(Serialize, Deserialize)]
 struct CargoToml {
-    #[serde_as(as = "Cursor!(workspace.package.version)")]
+    #[serde(rename = "workspace")]
+    #[serde_as(as = "Cursor!(package.version)")]
     version: String,
 }
+
+let toml: CargoToml = toml::from_str("workspace = { package = { version = '0.1.0' } }")?;
+assert_eq!(toml.version, "0.1.0");
+assert_eq!(serde_json::to_string(&toml)?, r#"{"workspace":{"package":{"version":"0.1.0"}}}"#);
+```
+
+## Great error messages
+
+When deserialization fails, you get the exact path of where the failure occurred.
+
+```rust
+use serde_cursor::Cursor;
+
+let data = serde_json::json!({ "author": { "id": "not-a-number" } });
+let result = serde_json::from_value::<Cursor!(author.id: i32)>(data);
+let err = result.unwrap_err().to_string();
+assert_eq!(err, r#".author.id: invalid type: string "not-a-number", expected i32"#);
 ```
 
 <!-- cargo-reedme: end -->
