@@ -195,6 +195,8 @@
 //! }
 //! ```
 
+mod ser;
+
 use core::fmt;
 use core::marker::PhantomData;
 use serde_core::de::{
@@ -258,15 +260,6 @@ impl<T: PartialOrd, P> PartialOrd for Cursor<T, P> {
 impl<T: Ord, P> core::cmp::Ord for Cursor<T, P> {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         <T as Ord>::cmp(&self.0, &other.0)
-    }
-}
-
-impl<T: serde_core::Serialize, P> serde_core::Serialize for Cursor<T, P> {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde_core::Serializer,
-    {
-        <T as serde_core::Serialize>::serialize(&self.0, serializer)
     }
 }
 
