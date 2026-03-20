@@ -26,13 +26,15 @@
 //! Accessed with `workspace.package.version`:
 //!
 //! ```
-//! # mod fs { pub fn read_to_string(_: &str) -> Result<String, Box<dyn std::error::Error>> { Ok(String::from("workspace = { package = { version = '0.1' } }")) } }
 //! use serde_cursor::Cursor;
 //!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//! let data = fs::read_to_string("Cargo.toml")?;
+//! let data = r#"
+//!     [workspace.package]
+//!     version = "0.1"
+//! "#;
 //!
-//! let version: String = toml::from_str::<Cursor!(workspace.package.version)>(&data)?.0;
+//! let version: String = toml::from_str::<Cursor!(workspace.package.version)>(data)?.0;
 //! assert_eq!(version, "0.1");
 //! # Ok(()) }
 //! ```
@@ -44,7 +46,6 @@
 //! *Pain and suffering...*
 //!
 //! ```
-//! # mod fs { pub fn read_to_string(_: &str) -> Result<String, Box<dyn std::error::Error>> { Ok(String::from("workspace = { package = { version = '0' } }")) } }
 //! use serde::Deserialize;
 //!
 //! #[derive(Deserialize)]
@@ -63,9 +64,12 @@
 //! }
 //!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//! let data = fs::read_to_string("Cargo.toml")?;
+//! let data = r#"
+//!     [workspace.package]
+//!     version = "0.1"
+//! "#;
 //!
-//! let version = toml::from_str::<CargoToml>(&data)?.workspace.package.version;
+//! let version = toml::from_str::<CargoToml>(data)?.workspace.package.version;
 //! # Ok(()) }
 //! ```
 //!
@@ -73,22 +77,27 @@
 //!
 //! ```toml
 //! [[package]]
-//! serde = "1.0"
+//! name = "serde"
 //!
 //! [[package]]
-//! rand = "0.9"
+//! name = "rand"
 //! ```
 //!
 //! The wildcard `.*` accesses every element in an array:
 //!
 //! ```
-//! # mod fs { pub fn read_to_string(_: &str) -> Result<String, Box<dyn std::error::Error>> { Ok(String::from("package = [{ name = 'serde' }, { name = 'rand' }]")) } }
 //! use serde_cursor::Cursor;
 //!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//! let file = fs::read_to_string("Cargo.lock")?;
+//! let file = r#"
+//!     [[package]]
+//!     name = "serde"
 //!
-//! let packages: Vec<String> = toml::from_str::<Cursor!(package.*.name)>(&file)?.0;
+//!     [[package]]
+//!     name = "rand"
+//! "#;
+//!
+//! let packages: Vec<String> = toml::from_str::<Cursor!(package.*.name)>(file)?.0;
 //!
 //! assert_eq!(packages, vec!["serde", "rand"]);
 //! # Ok(()) }
@@ -97,7 +106,6 @@
 //! **Without `serde_cursor`**:
 //!
 //! ```
-//! # mod fs { pub fn read_to_string(_: &str) -> Result<String, Box<dyn std::error::Error>> { Ok(String::from("package = [{ name = '' }]")) } }
 //! use serde::Deserialize;
 //!
 //! #[derive(Deserialize)]
@@ -111,9 +119,15 @@
 //! }
 //!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//! let file = fs::read_to_string("Cargo.lock")?;
+//! let file = r#"
+//!     [[package]]
+//!     name = "serde"
 //!
-//! let packages = toml::from_str::<CargoLock>(&file)?
+//!     [[package]]
+//!     name = "rand"
+//! "#;
+//!
+//! let packages = toml::from_str::<CargoLock>(file)?
 //!     .package
 //!     .into_iter()
 //!     .map(|pkg| pkg.name)
@@ -130,20 +144,18 @@
 //! `serde_cursor`:
 //!
 //! ```
-//! # mod fs { pub fn read_to_string(_: &str) -> Result<String, Box<dyn std::error::Error>> { Ok(String::from(r#"{ "commits": [{"author": ""}] }"#)) } }
 //! use serde_cursor::Cursor;
 //!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//! let data = fs::read_to_string("data.json")?;
+//! let data = r#"{ "commits": [{"author": "Ferris"}] }"#;
 //!
-//! let authors: Vec<String> = serde_json::from_str::<Cursor!(commits.*.author)>(&data)?.0;
+//! let authors: Vec<String> = serde_json::from_str::<Cursor!(commits.*.author)>(data)?.0;
 //! # Ok(()) }
 //! ```
 //!
 //! `serde_query`:
 //!
 //! ```
-//! # mod fs { pub fn read_to_string(_: &str) -> Result<String, Box<dyn std::error::Error>> { Ok(String::from(r#"{ "commits": [{"author": ""}] }"#)) } }
 //! use serde_query::Deserialize;
 //!
 //! #[derive(Deserialize)]
@@ -153,8 +165,8 @@
 //! }
 //!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//! let data = fs::read_to_string("data.json")?;
-//! let data: Data = serde_json::from_str(&data)?;
+//! let data = r#"{ "commits": [{"author": "Ferris"}] }"#;
+//! let data: Data = serde_json::from_str(data)?;
 //!
 //! let authors = data.authors;
 //! # Ok(()) }
@@ -165,7 +177,6 @@
 //! `serde_cursor`:
 //!
 //! ```
-//! # mod fs { pub fn read_to_string(_: &str) -> Result<String, Box<dyn std::error::Error>> { Ok(String::from(r#"{ "count": 0, "commits": [{"author": ""}] }"#)) } }
 //! use serde::Deserialize;
 //! use serde_cursor::Cursor;
 //!
@@ -177,16 +188,15 @@
 //! }
 //!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//! let data = fs::read_to_string("data.json")?;
+//! let data = r#"{ "count": 1, "commits": [{"author": "Ferris"}] }"#;
 //!
-//! let data: Data = serde_json::from_str(&data)?;
+//! let data: Data = serde_json::from_str(data)?;
 //! # Ok(()) }
 //! ```
 //!
 //! `serde_query`:
 //!
 //! ```
-//! # mod fs { pub fn read_to_string(_: &str) -> Result<String, Box<dyn std::error::Error>> { Ok(String::from(r#"{ "count": 0, "commits": [{"author": ""}] }"#)) } }
 //! use serde_query::Deserialize;
 //!
 //! #[derive(Deserialize)]
@@ -198,9 +208,9 @@
 //! }
 //!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//! let data = fs::read_to_string("data.json")?;
+//! let data = r#"{ "count": 1, "commits": [{"author": "Ferris"}] }"#;
 //!
-//! let data: Data = serde_json::from_str(&data)?;
+//! let data: Data = serde_json::from_str(data)?;
 //! # Ok(()) }
 //! ```
 //!

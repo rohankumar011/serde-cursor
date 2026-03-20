@@ -45,9 +45,12 @@ Accessed with `workspace.package.version`:
 ```rust
 use serde_cursor::Cursor;
 
-let data = fs::read_to_string("Cargo.toml")?;
+let data = r#"
+    [workspace.package]
+    version = "0.1"
+"#;
 
-let version: String = toml::from_str::<Cursor!(workspace.package.version)>(&data)?.0;
+let version: String = toml::from_str::<Cursor!(workspace.package.version)>(data)?.0;
 assert_eq!(version, "0.1");
 ```
 
@@ -75,19 +78,22 @@ struct Package {
     version: String
 }
 
-let data = fs::read_to_string("Cargo.toml")?;
+let data = r#"
+    [workspace.package]
+    version = "0.1"
+"#;
 
-let version = toml::from_str::<CargoToml>(&data)?.workspace.package.version;
+let version = toml::from_str::<CargoToml>(data)?.workspace.package.version;
 ```
 
 ### Get names of all dependencies from `Cargo.lock`
 
 ```toml
 [[package]]
-serde = "1.0"
+name = "serde"
 
 [[package]]
-rand = "0.9"
+name = "rand"
 ```
 
 The wildcard `.*` accesses every element in an array:
@@ -95,9 +101,15 @@ The wildcard `.*` accesses every element in an array:
 ```rust
 use serde_cursor::Cursor;
 
-let file = fs::read_to_string("Cargo.lock")?;
+let file = r#"
+    [[package]]
+    name = "serde"
 
-let packages: Vec<String> = toml::from_str::<Cursor!(package.*.name)>(&file)?.0;
+    [[package]]
+    name = "rand"
+"#;
+
+let packages: Vec<String> = toml::from_str::<Cursor!(package.*.name)>(file)?.0;
 
 assert_eq!(packages, vec!["serde", "rand"]);
 ```
@@ -117,9 +129,15 @@ struct Package {
     name: String
 }
 
-let file = fs::read_to_string("Cargo.lock")?;
+let file = r#"
+    [[package]]
+    name = "serde"
 
-let packages = toml::from_str::<CargoLock>(&file)?
+    [[package]]
+    name = "rand"
+"#;
+
+let packages = toml::from_str::<CargoLock>(file)?
     .package
     .into_iter()
     .map(|pkg| pkg.name)
@@ -137,9 +155,9 @@ let packages = toml::from_str::<CargoLock>(&file)?
 ```rust
 use serde_cursor::Cursor;
 
-let data = fs::read_to_string("data.json")?;
+let data = r#"{ "commits": [{"author": "Ferris"}] }"#;
 
-let authors: Vec<String> = serde_json::from_str::<Cursor!(commits.*.author)>(&data)?.0;
+let authors: Vec<String> = serde_json::from_str::<Cursor!(commits.*.author)>(data)?.0;
 ```
 
 `serde_query`:
@@ -153,8 +171,8 @@ struct Data {
     authors: Vec<String>,
 }
 
-let data = fs::read_to_string("data.json")?;
-let data: Data = serde_json::from_str(&data)?;
+let data = r#"{ "commits": [{"author": "Ferris"}] }"#;
+let data: Data = serde_json::from_str(data)?;
 
 let authors = data.authors;
 ```
@@ -174,9 +192,9 @@ struct Data {
     count: usize,
 }
 
-let data = fs::read_to_string("data.json")?;
+let data = r#"{ "count": 1, "commits": [{"author": "Ferris"}] }"#;
 
-let data: Data = serde_json::from_str(&data)?;
+let data: Data = serde_json::from_str(data)?;
 ```
 
 `serde_query`:
@@ -192,9 +210,9 @@ struct Data {
     count: usize,
 }
 
-let data = fs::read_to_string("data.json")?;
+let data = r#"{ "count": 1, "commits": [{"author": "Ferris"}] }"#;
 
-let data: Data = serde_json::from_str(&data)?;
+let data: Data = serde_json::from_str(data)?;
 ```
 
 ## `serde_with` integration
