@@ -71,7 +71,6 @@ fn test_nested_wildcards() {
         ]
     });
 
-    // This maps to Cursor!(groups.*.members.*.name)
     let expected = vec![
         vec!["A".to_string(), "B".to_string()],
         vec!["C".to_string()],
@@ -110,16 +109,12 @@ fn test_serde_as_integration_full_roundtrip() {
         }
     });
 
-    // Deserialize
     let project: FullProject = serde_json::from_value(input.clone()).unwrap();
 
-    // Verify fields
     assert_eq!(project.version, "1.2.3");
 
-    // Serialize
     let output = serde_json::to_value(&project).unwrap();
 
-    // Check JSON equality
     assert_eq!(input, output);
 }
 
@@ -140,7 +135,7 @@ fn test_borrowed_str_manual() {
 
 #[test]
 fn test_wildcard_with_missing_fields() {
-    // Some objects have 'val', one has 'other', one is empty
+    // some objects have 'val', one has 'other', one is empty
     let json = json!([
         { "val": 1 },
         { "other": 99 },
@@ -162,7 +157,7 @@ fn test_wildcard_with_missing_fields() {
 fn test_type_mismatch_error() {
     let json = json!({ "a": { "not_an_array": 42 } });
 
-    // Path expects an array at index 0, but finds a map
+    // path expects an array at index 0, but finds a map
     let result = serde_json::from_value::<Cursor!(a.0: i32)>(json);
 
     assert!(result.is_err());
@@ -189,12 +184,12 @@ fn test_matrix_wildcards() {
 #[test]
 #[allow(clippy::type_complexity)]
 fn test_empty_json_behaviors() {
-    // 1. Path exists but value is null
+    // path exists but value is null
     let json = json!({"a": null});
     let cursor: Cursor!(a: Option<i32>) = serde_json::from_value(json).unwrap();
     assert_eq!(*cursor, None);
 
-    // 2. Index into empty array
+    // index into empty array
     let json_empty_arr = json!({"arr": []});
     let cursor_idx: Result<Cursor!(arr.5: i32), _> = serde_json::from_value(json_empty_arr);
     assert!(cursor_idx.is_err(), "Indexing out of bounds should error");

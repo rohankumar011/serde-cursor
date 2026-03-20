@@ -202,6 +202,19 @@
 //! assert_eq!(serde_json::to_string(&toml)?, r#"{"workspace":{"package":{"version":"0.1.0"}}}"#);
 //! # Ok(()) }
 //! ```
+//!
+//! # Great error messages
+//!
+//! When deserialization fails, you get the exact path of where the failure occurred.
+//!
+//! ```
+//! use serde_cursor::Cursor;
+//!
+//! let data = serde_json::json!({ "author": { "id": "not-a-number" } });
+//! let result = serde_json::from_value::<Cursor!(author.id: i32)>(data);
+//! let err = result.unwrap_err().to_string();
+//! assert_eq!(err, r#".author.id: invalid type: string "not-a-number", expected i32"#);
+//! ```
 
 pub mod de;
 mod path_segment;
