@@ -1,6 +1,16 @@
-use crate::{Cons, ConstPathSegment, Cursor, Nil, PathSegment, Wildcard};
-use serde_core::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
 use std::marker::PhantomData;
+
+use serde_core::ser::Serialize;
+use serde_core::ser::SerializeMap;
+use serde_core::ser::SerializeSeq;
+use serde_core::ser::Serializer;
+
+use crate::Cons;
+use crate::ConstPathSegment;
+use crate::Cursor;
+use crate::Nil;
+use crate::PathSegment;
+use crate::Wildcard;
 
 impl<T, P> serde_core::Serialize for Cursor<T, P>
 where

@@ -1,9 +1,10 @@
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+use serde::Serialize;
 use serde_cursor::Cursor;
 use serde_json::json;
 use serde_with::serde_as;
 
-/// `C` satifies any type returned by `Cursor!` macro
+/// `C` satisfies any type returned by `Cursor!` macro
 #[track_caller]
 fn assert_roundtrip<T, C>(input: serde_json::Value, expected_inner: T)
 where

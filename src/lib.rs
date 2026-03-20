@@ -299,14 +299,15 @@ mod de;
 mod path_segment;
 mod ser;
 
-pub use de::DeserializePath;
-pub use ser::SerializeCursor;
-
-pub use path_segment::{ConstPathSegment, FieldName, Index, PathSegment};
-
 use core::fmt;
 use core::marker::PhantomData;
 
+pub use de::DeserializePath;
+pub use path_segment::ConstPathSegment;
+pub use path_segment::FieldName;
+pub use path_segment::Index;
+pub use path_segment::PathSegment;
+pub use ser::SerializeCursor;
 /// Access nested fields of values easily.
 ///
 /// ```toml

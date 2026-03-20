@@ -33,12 +33,21 @@ The [`Cursor!`](https://docs.rs/serde_cursor_impl/latest/serde_cursor_impl/macro
 
 ### Get version from `Cargo.toml`
 
+```toml
+# Cargo.toml
+[workspace.package]
+version = "0.1"
+```
+
+Accessed with `workspace.package.version`:
+
 ```rust
 use serde_cursor::Cursor;
 
 let data = fs::read_to_string("Cargo.toml")?;
 
 let version: String = toml::from_str::<Cursor!(workspace.package.version)>(&data)?.0;
+assert_eq!(version, "0.1");
 ```
 
 **Without `serde_cursor`**:
@@ -68,12 +77,24 @@ let version = toml::from_str::<CargoToml>(&data)?.workspace.package.version;
 
 ### Get names of all dependencies from `Cargo.lock`
 
+```toml
+[[package]]
+serde = "1.0"
+
+[[package]]
+rand = "0.9"
+```
+
+The wildcard `.*` accesses every element in an array:
+
 ```rust
 use serde_cursor::Cursor;
 
 let file = fs::read_to_string("Cargo.lock")?;
 
 let packages: Vec<String> = toml::from_str::<Cursor!(package.*.name)>(&file)?.0;
+
+assert_eq!(packages, vec!["serde", "rand"]);
 ```
 
 **Without `serde_cursor`**:
@@ -205,5 +226,59 @@ let result = serde_json::from_value::<Cursor!(author.id: i32)>(data);
 let err = result.unwrap_err().to_string();
 assert_eq!(err, r#".author.id: invalid type: string "not-a-number", expected i32"#);
 ```
+
+## How does it work?
+
+The [`Cursor!`](https://docs.rs/serde_cursor_impl/latest/serde_cursor_impl/macro.Cursor.html) macro is a “type-level” parser. It takes your jq-like query and transforms it into a nested, recursive type that implements [`serde::Deserialize`](https://docs.rs/serde_core/latest/serde_core/de/trait.Deserialize.html).
+
+Consider this query, which gets the first dependency of every dependency in `Cargo.toml`:
+
+```rust
+Cursor!(package.*.dependencies.0: String)
+```
+
+For this `Cargo.lock`, it would extract `["libc", "find-msvc-tools"]`:
+
+```toml
+[[package]]
+name = "android_system_properties"
+dependencies = ["libc"]
+
+[[package]]
+name = "cc"
+dependencies = ["find-msvc-tools", "shlex"]
+```
+
+That macro is expanded into a [Cursor](https://docs.rs/serde_cursor/latest/serde_cursor/struct.Cursor.html) type, which implements [Deserialize](https://docs.rs/serde_core/latest/serde_core/de/trait.Deserialize.html) and [Serialize](https://docs.rs/serde_core/latest/serde_core/ser/trait.Serialize.html):
+
+```rust
+Cursor<
+    String,
+    Cons<
+        Field<"package">,
+        Cons<
+            Wildcard,
+            Cons<
+                Field<"dependencies">,
+                Cons<Index<0>, Nil>,
+            >,
+        >,
+    >,
+>
+```
+
+The above is essentially an equivalent to:
+
+```rust
+vec!["package", *, "dependencies", 0]
+```
+
+Except it exists entirely in the type system.
+
+Each time the [`Deserialize::deserialize()`](serde_core::Deserialize::deserialize) function is called, the first element of the type-level list is removed,
+and the rest of the list is passed to the [`Deserialize`](https://docs.rs/serde_core/latest/serde_core/de/trait.Deserialize.html) trait, again.
+
+This happens until the list is exhausted, in which case we finally get to the type of the field - the `String` in the above example,
+and finally call [`Deserialize::deserialize()`](serde_core::Deserialize::deserialize) on that, to finish things off.
 
 <!-- cargo-reedme: end -->

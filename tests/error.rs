@@ -1,5 +1,6 @@
 use serde_cursor::Cursor;
-use serde_json::{from_value, json};
+use serde_json::from_value;
+use serde_json::json;
 
 #[test]
 fn test_error_missing_field() {

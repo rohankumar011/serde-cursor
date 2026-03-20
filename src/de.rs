@@ -1,18 +1,21 @@
-use crate::ConstPathSegment;
-use crate::Nil;
-use crate::PathSegment;
 use core::fmt;
 use std::marker::PhantomData;
 
 use serde_core::de::DeserializeSeed;
+use serde_core::de::IgnoredAny;
 use serde_core::de::MapAccess;
-use serde_core::{
-    Deserialize, Deserializer,
-    de::{IgnoredAny, SeqAccess, Visitor},
-};
+use serde_core::de::SeqAccess;
+use serde_core::de::Visitor;
+use serde_core::Deserialize;
+use serde_core::Deserializer;
 
+use crate::Cons;
+use crate::ConstPathSegment;
 use crate::Cursor;
-use crate::{Cons, Sequence, Wildcard};
+use crate::Nil;
+use crate::PathSegment;
+use crate::Sequence;
+use crate::Wildcard;
 
 struct SequenceVisitor<P, T> {
     target_index: usize,
@@ -96,13 +99,16 @@ where
         match result {
             Some(val) => Ok(val),
             // This allows Option<T> to become None instead of failing.
-            None => T::deserialize(serde_core::de::value::UnitDeserializer::<A::Error>::new())
-                .map_err(|_| {
-                    <A::Error as serde_core::de::Error>::custom(format!(
-                        "missing field '{}'",
-                        self.target
-                    ))
-                }),
+            None => {
+                T::deserialize(serde_core::de::value::UnitDeserializer::<A::Error>::new()).map_err(
+                    |_| {
+                        <A::Error as serde_core::de::Error>::custom(format!(
+                            "missing field '{}'",
+                            self.target
+                        ))
+                    },
+                )
+            }
         }
     }
 }
@@ -162,14 +168,18 @@ where
         let segment = S::VALUE;
 
         let result = match segment {
-            PathSegment::Field(name) => deserializer.deserialize_map(FieldVisitor::<P, T> {
-                target: name,
-                _marker: PhantomData,
-            }),
-            PathSegment::Index(index) => deserializer.deserialize_seq(SequenceVisitor::<P, T> {
-                target_index: index,
-                _marker: PhantomData,
-            }),
+            PathSegment::Field(name) => {
+                deserializer.deserialize_map(FieldVisitor::<P, T> {
+                    target: name,
+                    _marker: PhantomData,
+                })
+            }
+            PathSegment::Index(index) => {
+                deserializer.deserialize_seq(SequenceVisitor::<P, T> {
+                    target_index: index,
+                    _marker: PhantomData,
+                })
+            }
         };
 
         // wrap the error with the current path segment

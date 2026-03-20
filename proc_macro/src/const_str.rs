@@ -36,9 +36,16 @@
 
 const K: usize = 6;
 
-use proc_macro::{Delimiter, Group, Literal, Span, TokenStream, TokenTree};
+use proc_macro::Delimiter;
+use proc_macro::Group;
+use proc_macro::Literal;
+use proc_macro::Span;
+use proc_macro::TokenStream;
+use proc_macro::TokenTree;
 
-use crate::{ident, path, punct};
+use crate::ident;
+use crate::path;
+use crate::punct;
 
 /// Encodes a string literal into a nested type-level representation:
 /// FieldName<(StrLen<N>, ( ... nested tuples of characters ... ))>

@@ -1,4 +1,7 @@
-use std::collections::{BTreeSet, HashSet, LinkedList, VecDeque};
+use std::collections::BTreeSet;
+use std::collections::HashSet;
+use std::collections::LinkedList;
+use std::collections::VecDeque;
 use std::hash::Hash;
 
 /// Sequences of items, such as [`Vec<T>`] or [`HashSet<T>`].

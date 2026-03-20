@@ -1,4 +1,10 @@
-use proc_macro::{Ident, Literal, Punct, Spacing, Span, TokenStream, TokenTree};
+use proc_macro::Ident;
+use proc_macro::Literal;
+use proc_macro::Punct;
+use proc_macro::Spacing;
+use proc_macro::Span;
+use proc_macro::TokenStream;
+use proc_macro::TokenTree;
 
 mod const_str;
 

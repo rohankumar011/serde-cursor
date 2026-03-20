@@ -4,7 +4,8 @@
 //
 // ref: https://github.com/dtolnay/monostate/blob/efb63b7ab6bfe73e7ccf20f71d17d3705cff9fcc/src/string.rs
 
-use std::{marker::PhantomData, mem::ManuallyDrop};
+use std::marker::PhantomData;
+use std::mem::ManuallyDrop;
 
 /// Allows effectively using `const S: &'static str` type parameter on stable rust.
 ///
