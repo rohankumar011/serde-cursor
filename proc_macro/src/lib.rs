@@ -62,7 +62,7 @@ pub fn Cursor(input: TokenStream) -> TokenStream {
     // Cursor!(a.0.c: HashMap<&str, &str>)
     //                ^^^^^^^^^^^^^^^^^^^
     let type_tokens: TokenStream = if input.peek().is_none() {
-        TokenStream::from_iter([punct('_')])
+        TokenStream::from_iter([ident("_")])
     } else {
         input.collect()
     };

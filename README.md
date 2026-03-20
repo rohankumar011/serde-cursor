@@ -66,7 +66,7 @@ let data = fs::read_to_string("Cargo.toml")?;
 let version = toml::from_str::<CargoToml>(&data)?.workspace.package.version;
 ```
 
-### Get all dependencies from `Cargo.lock`
+### Get names of all dependencies from `Cargo.lock`
 
 ```rust
 use serde_cursor::Cursor;
@@ -100,9 +100,9 @@ let packages = toml::from_str::<CargoLock>(&file)?
     .collect::<Vec<_>>();
 ```
 
-## `serde_cursor` vs [`serde_query`]
+## `serde_cursor` vs [`serde_query`](https://github.com/pandaman64/serde-query)
 
-`serde_query` is significantly more verbose.
+`serde_query` also implements jq-like queries, but more verbosely.
 
 ### Single query
 

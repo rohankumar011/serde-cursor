@@ -17,18 +17,20 @@
 //! ## Get version from `Cargo.toml`
 //!
 //! ```
-//! # mod fs { fn read_to_string(_: &str) -> String { String::new() } }
+//! # mod fs { pub fn read_to_string(_: &str) -> Result<String, Box<dyn std::error::Error>> { Ok(String::from("workspace = { package = { version = '0' } }")) } }
 //! use serde_cursor::Cursor;
 //!
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! let data = fs::read_to_string("Cargo.toml")?;
 //!
 //! let version: String = toml::from_str::<Cursor!(workspace.package.version)>(&data)?.0;
+//! # Ok(()) }
 //! ```
 //!
 //! **Without `serde_cursor`**:
 //!
 //! ```
-//! # mod fs { fn read_to_string(_: &str) -> String { String::new() } }
+//! # mod fs { pub fn read_to_string(_: &str) -> Result<String, Box<dyn std::error::Error>> { Ok(String::from("workspace = { package = { version = '0' } }")) } }
 //! use serde::Deserialize;
 //!
 //! #[derive(Deserialize)]
@@ -42,30 +44,34 @@
 //! }
 //!
 //! #[derive(Deserialize)]
-//! struct Workspace {
+//! struct Package {
 //!     version: String
 //! }
 //!
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! let data = fs::read_to_string("Cargo.toml")?;
 //!
 //! let version = toml::from_str::<CargoToml>(&data)?.workspace.package.version;
+//! # Ok(()) }
 //! ```
 //!
-//! ## Get all dependencies from `Cargo.lock`
+//! ## Get names of all dependencies from `Cargo.lock`
 //!
 //! ```
-//! # mod fs { fn read_to_string(_: &str) -> String { String::new() } }
+//! # mod fs { pub fn read_to_string(_: &str) -> Result<String, Box<dyn std::error::Error>> { Ok(String::from("package = [{ name = '' }]")) } }
 //! use serde_cursor::Cursor;
 //!
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! let file = fs::read_to_string("Cargo.lock")?;
 //!
 //! let packages: Vec<String> = toml::from_str::<Cursor!(package.*.name)>(&file)?.0;
+//! # Ok(()) }
 //! ```
 //!
 //! **Without `serde_cursor`**:
 //!
 //! ```
-//! # mod fs { fn read_to_string(_: &str) -> String { String::new() } }
+//! # mod fs { pub fn read_to_string(_: &str) -> Result<String, Box<dyn std::error::Error>> { Ok(String::from("package = [{ name = '' }]")) } }
 //! use serde::Deserialize;
 //!
 //! #[derive(Deserialize)]
@@ -78,6 +84,7 @@
 //!     name: String
 //! }
 //!
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! let file = fs::read_to_string("Cargo.lock")?;
 //!
 //! let packages = toml::from_str::<CargoLock>(&file)?
@@ -85,29 +92,32 @@
 //!     .into_iter()
 //!     .map(|pkg| pkg.name)
 //!     .collect::<Vec<_>>();
+//! # Ok(()) }
 //! ```
 //!
-//! # `serde_cursor` vs [`serde_query`]
+//! # `serde_cursor` vs [`serde_query`](https://github.com/pandaman64/serde-query)
 //!
-//! `serde_query` is significantly more verbose.
+//! `serde_query` also implements jq-like queries, but more verbosely.
 //!
 //! ## Single query
 //!
 //! `serde_cursor`:
 //!
 //! ```
-//! # mod fs { fn read_to_string(_: &str) -> String { String::new() } }
+//! # mod fs { pub fn read_to_string(_: &str) -> Result<String, Box<dyn std::error::Error>> { Ok(String::from(r#"{ "commits": [{"author": ""}] }"#)) } }
 //! use serde_cursor::Cursor;
 //!
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! let data = fs::read_to_string("data.json")?;
 //!
 //! let authors: Vec<String> = serde_json::from_str::<Cursor!(commits.*.author)>(&data)?.0;
+//! # Ok(()) }
 //! ```
 //!
 //! `serde_query`:
 //!
 //! ```
-//! # mod fs { fn read_to_string(_: &str) -> String { String::new() } }
+//! # mod fs { pub fn read_to_string(_: &str) -> Result<String, Box<dyn std::error::Error>> { Ok(String::from(r#"{ "commits": [{"author": ""}] }"#)) } }
 //! use serde_query::Deserialize;
 //!
 //! #[derive(Deserialize)]
@@ -116,10 +126,12 @@
 //!     authors: Vec<String>,
 //! }
 //!
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! let data = fs::read_to_string("data.json")?;
 //! let data: Data = serde_json::from_str(&data)?;
 //!
 //! let authors = data.authors;
+//! # Ok(()) }
 //! ```
 //!
 //! ## Storing queries in a `struct`
@@ -127,23 +139,28 @@
 //! `serde_cursor`:
 //!
 //! ```
+//! # mod fs { pub fn read_to_string(_: &str) -> Result<String, Box<dyn std::error::Error>> { Ok(String::from(r#"{ "count": 0, "commits": [{"author": ""}] }"#)) } }
 //! use serde::Deserialize;
 //! use serde_cursor::Cursor;
 //!
 //! #[derive(Deserialize)]
 //! struct Data {
-//!     authors: Cursor!(commits.*.author: Vec<String>),
-//!     count: Cursor!(count: usize),
+//!     #[serde(rename = "commits")]
+//!     authors: Cursor!(*.author: Vec<String>),
+//!     count: usize,
 //! }
 //!
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! let data = fs::read_to_string("data.json")?;
 //!
 //! let data: Data = serde_json::from_str(&data)?;
+//! # Ok(()) }
 //! ```
 //!
 //! `serde_query`:
 //!
 //! ```
+//! # mod fs { pub fn read_to_string(_: &str) -> Result<String, Box<dyn std::error::Error>> { Ok(String::from(r#"{ "count": 0, "commits": [{"author": ""}] }"#)) } }
 //! use serde_query::Deserialize;
 //!
 //! #[derive(Deserialize)]
@@ -154,9 +171,11 @@
 //!     count: usize,
 //! }
 //!
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! let data = fs::read_to_string("data.json")?;
 //!
 //! let data: Data = serde_json::from_str(&data)?;
+//! # Ok(()) }
 //! ```
 //!
 //! # `serde_with` integration
@@ -164,7 +183,7 @@
 //! If `feature = "serde_with"` is enabled, [`struct@Cursor`] will implement [`serde_with::DeserializeAs`], meaning you can use it with `#[serde_as]`:
 //!
 //! ```
-//! # use serde_as::serde_as;
+//! # use serde_with::serde_as;
 //! use serde::{Serialize, Deserialize};
 //! use serde_cursor::Cursor;
 //!
@@ -188,6 +207,97 @@ pub use serde_cursor_impl::Cursor;
 
 /// Type returned by the [`Cursor!`] macro.
 pub struct Cursor<T, P>(pub T, #[doc(hidden)] PhantomData<P>);
+
+impl<T: fmt::Debug, P> fmt::Debug for Cursor<T, P> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("Cursor").field(&self.0).finish()
+    }
+}
+
+impl<T: Clone, P> Clone for Cursor<T, P> {
+    fn clone(&self) -> Self {
+        Self(self.0.clone(), self.1)
+    }
+}
+
+impl<T: Copy, P> Copy for Cursor<T, P> {}
+
+impl<T: Default, P> Default for Cursor<T, P> {
+    fn default() -> Self {
+        Self(Default::default(), PhantomData)
+    }
+}
+
+impl<T: fmt::Display, P> fmt::Display for Cursor<T, P> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        <T as fmt::Display>::fmt(&self.0, f)
+    }
+}
+
+impl<T: core::hash::Hash, P> core::hash::Hash for Cursor<T, P> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.0.hash(state);
+        self.1.hash(state);
+    }
+}
+
+impl<T: Eq, P> Eq for Cursor<T, P> {}
+
+impl<T: PartialEq, P> PartialEq for Cursor<T, P> {
+    fn eq(&self, other: &Self) -> bool {
+        <T as PartialEq>::eq(&self.0, &other.0)
+    }
+}
+
+impl<T: PartialOrd, P> PartialOrd for Cursor<T, P> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        <T as PartialOrd>::partial_cmp(&self.0, &other.0)
+    }
+}
+
+impl<T: Ord, P> core::cmp::Ord for Cursor<T, P> {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        <T as Ord>::cmp(&self.0, &other.0)
+    }
+}
+
+impl<T: serde_core::Serialize, P> serde_core::Serialize for Cursor<T, P> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde_core::Serializer,
+    {
+        <T as serde_core::Serialize>::serialize(&self.0, serializer)
+    }
+}
+
+#[cfg(feature = "serde_with")]
+impl<T, U, P> serde_with::SerializeAs<Cursor<T, P>> for Cursor<U, P>
+where
+    U: serde_with::SerializeAs<T>,
+{
+    fn serialize_as<S>(source: &Cursor<T, P>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde_core::Serializer,
+    {
+        serde_core::Serialize::serialize(
+            &serde_with::ser::SerializeAsWrap::<T, U>::new(&source.0),
+            serializer,
+        )
+    }
+}
+
+#[cfg(feature = "serde_with")]
+impl<'de, T, P> serde_with::DeserializeAs<'de, T> for Cursor<T, P> {
+    fn deserialize_as<D>(deserializer: D) -> Result<T, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        Ok(
+            serde_with::de::DeserializeAsWrap::<T, Cursor<T, P>>::deserialize(deserializer)?
+                .into_inner(),
+        )
+    }
+}
 
 impl<'de, T, P> Deserialize<'de> for Cursor<T, P>
 where
@@ -215,6 +325,7 @@ pub use const_str::C4;
 pub use const_str::ConstStr;
 #[doc(hidden)]
 pub use const_str::StrLen;
+use serde_with::rust::unwrap_or_skip::deserialize;
 
 mod const_str;
 
