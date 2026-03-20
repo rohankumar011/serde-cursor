@@ -4,25 +4,28 @@ use std::marker::PhantomData;
 
 impl<T, P> serde_core::Serialize for Cursor<T, P>
 where
-    P: ToCursor<T>,
+    P: SerializeCursor<T>,
 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde_core::Serializer,
     {
-        P::serialize_nested(&self.0, serializer)
+        P::serialize(&self.0, serializer)
     }
 }
 
-pub trait ToCursor<T> {
-    fn serialize_nested<S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
+/// Serializes the path to the type returned by [`Cursor!`].
+///
+/// For more information, see the [crate-level](crate) documentation.
+pub trait SerializeCursor<T> {
+    fn serialize<S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer;
 }
 
 // base case: no more path, just serialize the value
-impl<T: Serialize> ToCursor<T> for Nil {
-    fn serialize_nested<S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
+impl<T: Serialize> SerializeCursor<T> for Nil {
+    fn serialize<S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
@@ -31,12 +34,12 @@ impl<T: Serialize> ToCursor<T> for Nil {
 }
 
 // step case: wrap in a map (field) or seq (Index)
-impl<S, P, T> ToCursor<T> for Cons<S, P>
+impl<S, P, T> SerializeCursor<T> for Cons<S, P>
 where
     S: ConstPathSegment,
-    P: ToCursor<T>,
+    P: SerializeCursor<T>,
 {
-    fn serialize_nested<Ser>(value: &T, serializer: Ser) -> Result<Ser::Ok, Ser::Error>
+    fn serialize<Ser>(value: &T, serializer: Ser) -> Result<Ser::Ok, Ser::Error>
     where
         Ser: Serializer,
     {
@@ -66,12 +69,12 @@ where
     }
 }
 
-impl<P, T, C> ToCursor<C> for Cons<Wildcard, P>
+impl<P, T, C> SerializeCursor<C> for Cons<Wildcard, P>
 where
     for<'a> &'a C: IntoIterator<Item = &'a T>,
-    P: ToCursor<T>,
+    P: SerializeCursor<T>,
 {
-    fn serialize_nested<S>(value: &C, serializer: S) -> Result<S::Ok, S::Error>
+    fn serialize<S>(value: &C, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
@@ -90,13 +93,13 @@ struct ToCursorWrapper<'a, P, T>(&'a T, PhantomData<P>);
 
 impl<'a, P, T> Serialize for ToCursorWrapper<'a, P, T>
 where
-    P: ToCursor<T>,
+    P: SerializeCursor<T>,
 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        P::serialize_nested(self.0, serializer)
+        P::serialize(self.0, serializer)
     }
 }
 
@@ -104,12 +107,12 @@ where
 impl<T, P> serde_with::SerializeAs<T> for Cursor<T, P>
 where
     T: Serialize,
-    P: ToCursor<T>,
+    P: SerializeCursor<T>,
 {
     fn serialize_as<S>(source: &T, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde_core::Serializer,
     {
-        P::serialize_nested(source, serializer)
+        P::serialize(source, serializer)
     }
 }

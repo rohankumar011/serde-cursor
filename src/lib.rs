@@ -16,14 +16,23 @@
 //!
 //! ## Get version from `Cargo.toml`
 //!
+//! ```toml
+//! # Cargo.toml
+//! [workspace.package]
+//! version = "0.1"
 //! ```
-//! # mod fs { pub fn read_to_string(_: &str) -> Result<String, Box<dyn std::error::Error>> { Ok(String::from("workspace = { package = { version = '0' } }")) } }
+//!
+//! Accessed with `workspace.package.version`:
+//!
+//! ```
+//! # mod fs { pub fn read_to_string(_: &str) -> Result<String, Box<dyn std::error::Error>> { Ok(String::from("workspace = { package = { version = '0.1' } }")) } }
 //! use serde_cursor::Cursor;
 //!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! let data = fs::read_to_string("Cargo.toml")?;
 //!
 //! let version: String = toml::from_str::<Cursor!(workspace.package.version)>(&data)?.0;
+//! assert_eq!(version, "0.1");
 //! # Ok(()) }
 //! ```
 //!
@@ -57,14 +66,26 @@
 //!
 //! ## Get names of all dependencies from `Cargo.lock`
 //!
+//! ```toml
+//! [[package]]
+//! serde = "1.0"
+//!
+//! [[package]]
+//! rand = "0.9"
 //! ```
-//! # mod fs { pub fn read_to_string(_: &str) -> Result<String, Box<dyn std::error::Error>> { Ok(String::from("package = [{ name = '' }]")) } }
+//!
+//! The wildcard `.*` accesses every element in an array:
+//!
+//! ```
+//! # mod fs { pub fn read_to_string(_: &str) -> Result<String, Box<dyn std::error::Error>> { Ok(String::from("package = [{ name = 'serde' }, { name = 'rand' }]")) } }
 //! use serde_cursor::Cursor;
 //!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! let file = fs::read_to_string("Cargo.lock")?;
 //!
 //! let packages: Vec<String> = toml::from_str::<Cursor!(package.*.name)>(&file)?.0;
+//!
+//! assert_eq!(packages, vec!["serde", "rand"]);
 //! # Ok(()) }
 //! ```
 //!
@@ -216,16 +237,49 @@
 //! assert_eq!(err, r#".author.id: invalid type: string "not-a-number", expected i32"#);
 //! ```
 
-pub mod de;
+mod de;
 mod path_segment;
-pub mod ser;
+mod ser;
+
+pub use de::DeserializePath;
+pub use ser::SerializeCursor;
 
 pub use path_segment::{ConstPathSegment, FieldName, Index, PathSegment};
 
 use core::fmt;
 use core::marker::PhantomData;
 
-/// The [`Cursor!`] macro.
+/// Access nested fields of values easily.
+///
+/// ```toml
+/// # Cargo.toml
+/// [workspace.package]
+/// version = "0.1"
+/// ```
+///
+/// To access nested fields, use dotted field syntax:
+///
+/// ```
+/// # mod fs { pub fn read_to_string(_: &str) -> Result<String, Box<dyn std::error::Error>> { Ok(String::from("workspace = { package = { version = '0' } }")) } }
+/// use serde_cursor::Cursor;
+///
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// let data = fs::read_to_string("Cargo.toml")?;
+///
+/// let version: String = toml::from_str::<Cursor!(workspace.package.version)>(&data)?.0;
+/// assert_eq!(version, "0.1");
+/// # Ok(()) }
+/// ```
+///
+/// You can access elements of arrays:
+///
+/// ```toml
+/// # Cargo.toml
+/// [workspace.package]
+/// version = "0.1"
+/// ```
+///
+/// See the [crate-level](crate) documentation for more.
 #[doc(inline)]
 pub use serde_cursor_impl::Cursor;
 
@@ -314,20 +368,14 @@ pub use const_str::Char4Byte as C4;
 #[doc(hidden)]
 pub use const_str::StrLen;
 
+/// Represents the end of a list.
 pub struct Nil;
 
+/// Represents a single segment of a serde path.
 pub struct Cons<S, P>(PhantomData<(S, P)>);
 
+/// Represents the `*` in `Cursor!(package.*.name)`.
 pub struct Wildcard;
 
-pub trait Sequence: Default {
-    type Item;
-    fn push(&mut self, item: Self::Item);
-}
-
-impl<T> Sequence for Vec<T> {
-    type Item = T;
-    fn push(&mut self, item: Self::Item) {
-        self.push(item);
-    }
-}
+mod sequence;
+pub use sequence::Sequence;

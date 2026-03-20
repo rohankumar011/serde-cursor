@@ -21,7 +21,7 @@ struct SequenceVisitor<P, T> {
 
 impl<'de, P, T> Visitor<'de> for SequenceVisitor<P, T>
 where
-    P: Path<'de, T>,
+    P: DeserializePath<'de, T>,
     T: Deserialize<'de>,
 {
     type Value = T;
@@ -70,7 +70,7 @@ struct FieldVisitor<P, D> {
 
 impl<'de, P, T> Visitor<'de> for FieldVisitor<P, T>
 where
-    P: Path<'de, T>,
+    P: DeserializePath<'de, T>,
     T: Deserialize<'de>,
 {
     type Value = T;
@@ -111,7 +111,7 @@ struct PathSeed<P, T>(PhantomData<(P, T)>);
 
 impl<'de, P, T> DeserializeSeed<'de> for PathSeed<P, T>
 where
-    P: Path<'de, T>,
+    P: DeserializePath<'de, T>,
     T: Deserialize<'de>,
 {
     type Value = T;
@@ -120,24 +120,26 @@ where
     where
         D: Deserializer<'de>,
     {
-        P::navigate(deserializer)
+        P::deserialize(deserializer)
     }
 }
 
+/// Deserializes the path to the type returned by [`Cursor!`]
+///
+/// For more information, see the [crate-level](crate) documentation.
 #[diagnostic::on_unimplemented(
     message = "`{T}` doesn't implement `serde_cursor::Sequence`",
     note = "try: `Vec<{T}>`"
 )]
-#[doc(hidden)]
-pub trait Path<'de, T> {
-    fn navigate<D>(deserializer: D) -> Result<T, D::Error>
+pub trait DeserializePath<'de, T> {
+    fn deserialize<D>(deserializer: D) -> Result<T, D::Error>
     where
         D: Deserializer<'de>;
 }
 
 // base case: we are at the target property
-impl<'de, T: Deserialize<'de>> Path<'de, T> for Nil {
-    fn navigate<D>(deserializer: D) -> Result<T, D::Error>
+impl<'de, T: Deserialize<'de>> DeserializePath<'de, T> for Nil {
+    fn deserialize<D>(deserializer: D) -> Result<T, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -146,13 +148,13 @@ impl<'de, T: Deserialize<'de>> Path<'de, T> for Nil {
 }
 
 // step case: we are still digging into the object
-impl<'de, S, P, T> Path<'de, T> for Cons<S, P>
+impl<'de, S, P, T> DeserializePath<'de, T> for Cons<S, P>
 where
     S: ConstPathSegment,
-    P: Path<'de, T>,
+    P: DeserializePath<'de, T>,
     T: Deserialize<'de>,
 {
-    fn navigate<D>(deserializer: D) -> Result<T, D::Error>
+    fn deserialize<D>(deserializer: D) -> Result<T, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -199,13 +201,13 @@ struct WildcardVisitor<P, C> {
     _marker: PhantomData<(P, C)>,
 }
 
-impl<'de, P, C> Path<'de, C> for Cons<Wildcard, P>
+impl<'de, P, C> DeserializePath<'de, C> for Cons<Wildcard, P>
 where
     C: Sequence,
-    P: Path<'de, C::Item>,
+    P: DeserializePath<'de, C::Item>,
     C::Item: Deserialize<'de>,
 {
-    fn navigate<D>(deserializer: D) -> Result<C, D::Error>
+    fn deserialize<D>(deserializer: D) -> Result<C, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -221,7 +223,7 @@ where
 impl<'de, P, C> Visitor<'de> for WildcardVisitor<P, C>
 where
     C: Sequence,
-    P: Path<'de, C::Item>,
+    P: DeserializePath<'de, C::Item>,
     C::Item: Deserialize<'de>,
 {
     type Value = C;
@@ -249,13 +251,13 @@ where
 impl<'de, T, P> Deserialize<'de> for Cursor<T, P>
 where
     T: Deserialize<'de>,
-    P: Path<'de, T>,
+    P: DeserializePath<'de, T>,
 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
-        let value = P::navigate(deserializer)?;
+        let value = P::deserialize(deserializer)?;
         Ok(Self(value, PhantomData))
     }
 }
@@ -264,12 +266,12 @@ where
 impl<'de, T, P> serde_with::DeserializeAs<'de, T> for Cursor<T, P>
 where
     T: Deserialize<'de>,
-    P: Path<'de, T>,
+    P: DeserializePath<'de, T>,
 {
     fn deserialize_as<D>(deserializer: D) -> Result<T, D::Error>
     where
         D: Deserializer<'de>,
     {
-        P::navigate(deserializer)
+        P::deserialize(deserializer)
     }
 }

@@ -1,3 +1,5 @@
+//! Allows using `const S: &'static str` on stable Rust, via <code>S: [ConstStr]</code>.
+
 // This module is adapted from the `monostate` crate by `dtolnay`, MIT license.
 //
 // ref: https://github.com/dtolnay/monostate/blob/efb63b7ab6bfe73e7ccf20f71d17d3705cff9fcc/src/string.rs
@@ -21,6 +23,7 @@ pub trait ConstStr {
     const VALUE: &'static str;
 }
 
+/// Represents the length of a string.
 #[allow(nonstandard_style)]
 pub struct StrLen<const N: usize>;
 
@@ -139,6 +142,7 @@ unsafe impl StringBuffer for () {
     const BYTES: Self::Type = ();
 }
 
+/// Concatenates 2 strings to make a bigger string.
 #[repr(C)]
 pub struct Concat2<A, B>(A, B);
 
@@ -156,6 +160,7 @@ where
     const BYTES: Self::Type = Concat2(A::BYTES, B::BYTES);
 }
 
+/// Concatenates 3 strings to make a bigger string.
 #[repr(C)]
 pub struct Concat3<A, B, C>(A, B, C);
 
@@ -174,6 +179,7 @@ where
     const BYTES: Self::Type = Concat3(A::BYTES, B::BYTES, C::BYTES);
 }
 
+/// Concatenates 4 strings to make a bigger string.
 #[repr(C)]
 pub struct Concat4<A, B, C, D>(A, B, C, D);
 
@@ -193,6 +199,7 @@ where
     const BYTES: Self::Type = Concat4(A::BYTES, B::BYTES, C::BYTES, D::BYTES);
 }
 
+/// Concatenates 5 strings to make a bigger string.
 #[repr(C)]
 pub struct Concat5<A, B, C, D, E>(A, B, C, D, E);
 
@@ -213,6 +220,7 @@ where
     const BYTES: Self::Type = Concat5(A::BYTES, B::BYTES, C::BYTES, D::BYTES, E::BYTES);
 }
 
+/// Concatenates 6 strings to make a bigger string.
 #[repr(C)]
 pub struct Concat6<A, B, C, D, E, F>(A, B, C, D, E, F);
 
