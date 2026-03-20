@@ -17,14 +17,6 @@
 //!
 //! ## Get version from `Cargo.toml`
 //!
-//! ```toml
-//! # Cargo.toml
-//! [workspace.package]
-//! version = "0.1"
-//! ```
-//!
-//! Accessed with `workspace.package.version`:
-//!
 //! ```
 //! use serde_cursor::Cursor;
 //!
@@ -74,14 +66,6 @@
 //! ```
 //!
 //! ## Get names of all dependencies from `Cargo.lock`
-//!
-//! ```toml
-//! [[package]]
-//! name = "serde"
-//!
-//! [[package]]
-//! name = "rand"
-//! ```
 //!
 //! The wildcard `.*` accesses every element in an array:
 //!

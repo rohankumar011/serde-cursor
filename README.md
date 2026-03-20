@@ -34,14 +34,6 @@ The [`Cursor!`](https://docs.rs/serde_cursor_impl/latest/serde_cursor_impl/macro
 
 ### Get version from `Cargo.toml`
 
-```toml
-# Cargo.toml
-[workspace.package]
-version = "0.1"
-```
-
-Accessed with `workspace.package.version`:
-
 ```rust
 use serde_cursor::Cursor;
 
@@ -87,14 +79,6 @@ let version = toml::from_str::<CargoToml>(data)?.workspace.package.version;
 ```
 
 ### Get names of all dependencies from `Cargo.lock`
-
-```toml
-[[package]]
-name = "serde"
-
-[[package]]
-name = "rand"
-```
 
 The wildcard `.*` accesses every element in an array:
 
