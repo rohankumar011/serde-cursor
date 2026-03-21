@@ -9,10 +9,10 @@ use serde_core::de::Visitor;
 use serde_core::Deserialize;
 use serde_core::Deserializer;
 
-use crate::Cons;
 use crate::ConstPathSegment;
 use crate::Cursor;
-use crate::Nil;
+use crate::CursorPath;
+use crate::CursorPathEnd;
 use crate::PathSegment;
 use crate::Sequence;
 use crate::Wildcard;
@@ -50,7 +50,7 @@ pub trait DeserializePath<'de, T> {
 //                   ^^^^ we are here
 //
 // So we call: <String as Deserialize>::deserialize
-impl<'de, T: Deserialize<'de>> DeserializePath<'de, T> for Nil {
+impl<'de, T: Deserialize<'de>> DeserializePath<'de, T> for CursorPathEnd {
     fn deserialize<D>(deserializer: D) -> Result<T, D::Error>
     where
         D: Deserializer<'de>,
@@ -93,7 +93,7 @@ impl<'de, T: Deserialize<'de>> DeserializePath<'de, T> for Nil {
 //     ^^^^^^^^^^^^^^^^^^^^ all of this will be deserialized (a single recursive step)
 // >
 //
-impl<'de, S, P, T> DeserializePath<'de, T> for Cons<S, P>
+impl<'de, S, P, T> DeserializePath<'de, T> for CursorPath<S, P>
 where
     S: ConstPathSegment, // const S: PathSegment
     P: DeserializePath<'de, T>,
@@ -333,7 +333,7 @@ struct WildcardVisitor<P, C> {
     _marker: PhantomData<(P, C)>,
 }
 
-impl<'de, P, C> DeserializePath<'de, C> for Cons<Wildcard, P>
+impl<'de, P, C> DeserializePath<'de, C> for CursorPath<Wildcard, P>
 where
     C: Sequence,
     P: DeserializePath<'de, C::Item>,

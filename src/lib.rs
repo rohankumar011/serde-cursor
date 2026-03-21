@@ -362,13 +362,13 @@
 //! # /*
 //! Cursor<
 //!     String,
-//!     Cons<
+//!     CursorPath<
 //!         Field<"package">,
-//!         Cons<
+//!         CursorPath<
 //!             Wildcard,
-//!             Cons<
+//!             CursorPath<
 //!                 Field<"dependencies">,
-//!                 Cons<Index<0>, Nil>,
+//!                 CursorPath<Index<0>, CursorPathEnd>,
 //!             >,
 //!         >,
 //!     >,
@@ -526,11 +526,11 @@ pub use const_str::Char4Byte as C4;
 #[doc(hidden)]
 pub use const_str::StrLen;
 
-/// Represents the end of a list.
-pub struct Nil;
+/// Represents the end of the cursor path.
+pub struct CursorPathEnd;
 
-/// Represents a single segment of a serde path.
-pub struct Cons<S, P>(PhantomData<(S, P)>);
+/// Represents a single segment of a cursor path.
+pub struct CursorPath<S, P>(PhantomData<(S, P)>);
 
 /// Represents the `*` in `Cursor!(package.*.name)`.
 pub struct Wildcard;

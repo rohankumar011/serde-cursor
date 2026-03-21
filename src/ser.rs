@@ -5,10 +5,10 @@ use serde_core::ser::SerializeMap;
 use serde_core::ser::SerializeSeq;
 use serde_core::ser::Serializer;
 
-use crate::Cons;
 use crate::ConstPathSegment;
 use crate::Cursor;
-use crate::Nil;
+use crate::CursorPath;
+use crate::CursorPathEnd;
 use crate::PathSegment;
 use crate::Wildcard;
 
@@ -37,7 +37,7 @@ pub trait SerializeCursor<T> {
 //
 // Cursor!(package.name: String)
 //                     ^ we are here
-impl<T: Serialize> SerializeCursor<T> for Nil {
+impl<T: Serialize> SerializeCursor<T> for CursorPathEnd {
     fn serialize<S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -53,7 +53,7 @@ impl<T: Serialize> SerializeCursor<T> for Nil {
 //         ^^^^^^^ we are here
 //
 // This produces: { "package": <rest of path> }
-impl<S, P, T> SerializeCursor<T> for Cons<S, P>
+impl<S, P, T> SerializeCursor<T> for CursorPath<S, P>
 where
     S: ConstPathSegment,
     P: SerializeCursor<T>,
@@ -114,7 +114,7 @@ where
 //   { "name": "a" },
 //   { "name": "b" }
 // ]
-impl<P, T, C> SerializeCursor<C> for Cons<Wildcard, P>
+impl<P, T, C> SerializeCursor<C> for CursorPath<Wildcard, P>
 where
     for<'a> &'a C: IntoIterator<Item = &'a T>,
     P: SerializeCursor<T>,

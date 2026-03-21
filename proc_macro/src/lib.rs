@@ -17,11 +17,11 @@ mod const_str;
 pub fn Cursor(input: TokenStream) -> TokenStream {
     let mut input = input.into_iter().peekable();
 
-    // every path segment individually
+    // every cursor path segment individually
     //
     // Cursor!(a.0.c: bool)
     //         ^ ^ ^
-    let mut path_segments = Vec::new();
+    let mut cursor_path_segments = Vec::new();
 
     // this is needed to know if we should expect a "." before
     // the first path segment, or not
@@ -38,7 +38,7 @@ pub fn Cursor(input: TokenStream) -> TokenStream {
         //         ^
         if !started {
             match parse_path_segment(&mut input) {
-                Ok(seg) => path_segments.push(seg),
+                Ok(seg) => cursor_path_segments.push(seg),
                 Err(e) => return e.into(),
             }
 
@@ -65,7 +65,7 @@ pub fn Cursor(input: TokenStream) -> TokenStream {
                 input.next();
 
                 match parse_path_segment(&mut input) {
-                    Ok(seg) => path_segments.push(seg),
+                    Ok(seg) => cursor_path_segments.push(seg),
                     Err(e) => return e.into(),
                 }
             }
@@ -83,19 +83,19 @@ pub fn Cursor(input: TokenStream) -> TokenStream {
         input.collect()
     };
 
-    // Type path: `Cons<_, Cons<_, Nil>>`
-    let path_gen = path_segments
-        .into_iter()
-        .rev()
-        .fold(path([ident("Nil")]), |p, segment| {
-            let mut ts = path([ident("Cons")]);
+    // Type path: `CursorPath<_, CursorPath<_, CursorPathEnd>>`
+    let cursor_path = cursor_path_segments.into_iter().rev().fold(
+        path([ident("CursorPathEnd")]),
+        |p, segment| {
+            let mut ts = path([ident("CursorPath")]);
             ts.extend([punct('<')]);
             ts.extend(segment.to_tokens());
             ts.extend([punct(',')]);
             ts.extend(p);
             ts.extend([punct('>')]);
             ts
-        });
+        },
+    );
 
     let mut ts = TokenStream::from_iter([
         punct(':'),
@@ -109,7 +109,7 @@ pub fn Cursor(input: TokenStream) -> TokenStream {
 
     ts.extend(type_tokens);
     ts.extend([punct(',')]);
-    ts.extend(path_gen);
+    ts.extend(cursor_path);
     ts.extend([punct('>')]);
 
     ts
