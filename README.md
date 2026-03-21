@@ -130,28 +130,40 @@ let packages = toml::from_str::<CargoLock>(file)?
 
 ## Syntax
 
-The type can be inferred from context:
-
-```rust
-let packages: Vec<String> = toml::from_str::<Cursor!(package.*.name)>(file)?.0;
-```
-
-The type can be specified inline:
+Specify the type after the path:
 
 ```rust
 let packages = toml::from_str::<Cursor!(package.*.name: Vec<String>)>(file)?.0;
 ```
 
-Any Rust identifier can be used without quotes, including `-`:
+The type can be omitted, in which case it will be inferred:
 
 ```rust
-let version: String = toml::from_str::<Cursor!(dev-dependencies.serde.version)>(file)?.0;
+let packages: Vec<String> = toml::from_str::<Cursor!(package.*.name)>(file)?.0;
 ```
 
-Fields that contain spaces or other special characters can be quoted:
+Equivalent to:
 
 ```rust
-let ferris: bool = toml::from_str::<Cursor!(ferris."🦀::<>".r#"""#)>(file)?.0;
+let packages: Vec<String> = toml::from_str::<Cursor!(package.*.name: _)>(file)?.0;
+```
+
+Fields that consist of identifiers and `-`s can be used without quotes:
+
+```rust
+Cursor!(dev-dependencies.serde.version)
+```
+
+Fields that contain spaces or other special characters must be quoted:
+
+```rust
+Cursor!(ferris."🦀::<>".r#"""#)
+```
+
+You can access specific elements of an array:
+
+```rust
+Cursor!(package.0.name)
 ```
 
 ## `serde_cursor` vs [`serde_query`](https://github.com/pandaman64/serde-query)

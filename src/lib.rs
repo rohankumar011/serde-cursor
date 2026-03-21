@@ -121,23 +121,7 @@
 //!
 //! # Syntax
 //!
-//! The type can be inferred from context:
-//!
-//! ```
-//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//! # let file = r#"
-//! #     [[package]]
-//! #     name = "serde"
-//! #
-//! #     [[package]]
-//! #     name = "rand"
-//! # "#;
-//! # use serde_cursor::Cursor;
-//! let packages: Vec<String> = toml::from_str::<Cursor!(package.*.name)>(file)?.0;
-//! # Ok(()) }
-//! ```
-//!
-//! The type can be specified inline:
+//! Specify the type after the path:
 //!
 //! ```
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -153,7 +137,39 @@
 //! # Ok(()) }
 //! ```
 //!
-//! Any Rust identifier can be used without quotes, including `-`:
+//! The type can be omitted, in which case it will be inferred:
+//!
+//! ```
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! # let file = r#"
+//! #     [[package]]
+//! #     name = "serde"
+//! #
+//! #     [[package]]
+//! #     name = "rand"
+//! # "#;
+//! # use serde_cursor::Cursor;
+//! let packages: Vec<String> = toml::from_str::<Cursor!(package.*.name)>(file)?.0;
+//! # Ok(()) }
+//! ```
+//!
+//! Equivalent to:
+//!
+//! ```
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! # let file = r#"
+//! #     [[package]]
+//! #     name = "serde"
+//! #
+//! #     [[package]]
+//! #     name = "rand"
+//! # "#;
+//! # use serde_cursor::Cursor;
+//! let packages: Vec<String> = toml::from_str::<Cursor!(package.*.name: _)>(file)?.0;
+//! # Ok(()) }
+//! ```
+//!
+//! Fields that consist of identifiers and `-`s can be used without quotes:
 //!
 //! ```
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -162,11 +178,13 @@
 //! #     version = "1.0"
 //! # "#;
 //! # use serde_cursor::Cursor;
-//! let version: String = toml::from_str::<Cursor!(dev-dependencies.serde.version)>(file)?.0;
+//! # let version: String = toml::from_str::<
+//! Cursor!(dev-dependencies.serde.version)
+//! # >(file)?.0;
 //! # Ok(()) }
 //! ```
 //!
-//! Fields that contain spaces or other special characters can be quoted:
+//! Fields that contain spaces or other special characters must be quoted:
 //!
 //! ```
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -175,7 +193,24 @@
 //! #     "\"" = true
 //! # "#;
 //! # use serde_cursor::Cursor;
-//! let ferris: bool = toml::from_str::<Cursor!(ferris."🦀::<>".r#"""#)>(file)?.0;
+//! # let ferris: bool = toml::from_str::<
+//! Cursor!(ferris."🦀::<>".r#"""#)
+//! # >(file)?.0;
+//! # Ok(()) }
+//! ```
+//!
+//! You can access specific elements of an array:
+//!
+//! ```
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! # let file = r#"
+//! #     [[package]]
+//! #     name = "serde"
+//! # "#;
+//! # use serde_cursor::Cursor;
+//! # let ferris: String = toml::from_str::<
+//! Cursor!(package.0.name)
+//! # >(file)?.0;
 //! # Ok(()) }
 //! ```
 //!
