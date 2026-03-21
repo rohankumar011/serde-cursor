@@ -51,7 +51,7 @@ pub trait ConstPathSegment {
 /// a concrete token.
 ///
 /// ```txt
-/// FieldName<..., { ["", "", ""] }>
+/// FieldName<..., { ["", "", ""]; false }>
 ///                   ^^ "dev"
 ///                       ^^ "-"
 ///                           ^^ "dependencies"
