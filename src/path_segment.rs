@@ -39,7 +39,7 @@ pub trait ConstPathSegment {
 /// It is always `false`.
 ///
 /// This const-generic only exists so we can create an arbitrary amount of string literals
-/// whos spans we associate with the user's input when they are writing the Cursor! macro
+/// whose spans we associate with the user's input when they are writing the Cursor! macro
 ///
 /// e.g. we want to syntax highlight the "dev-dependencies" as a single string:
 ///
