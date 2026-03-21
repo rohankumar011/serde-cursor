@@ -293,6 +293,19 @@
 //! # Ok(()) }
 //! ```
 //!
+//! # Great error messages
+//!
+//! When deserialization fails, you get the exact path of where the failure occurred.
+//!
+//! ```
+//! use serde_cursor::Cursor;
+//!
+//! let data = serde_json::json!({ "author": { "id": "not-a-number" } });
+//! let result = serde_json::from_value::<Cursor!(author.id: i32)>(data);
+//! let err = result.unwrap_err().to_string();
+//! assert_eq!(err, r#".author.id: invalid type: string "not-a-number", expected i32"#);
+//! ```
+//!
 //! # `serde_with` integration
 //!
 //! If `feature = "serde_with"` is enabled, [`Cursor`](struct@Cursor) will implement [`serde_with::DeserializeAs`] and [`serde_with::SerializeAs`],
@@ -316,19 +329,6 @@
 //! assert_eq!(toml.version, "0.1.0");
 //! assert_eq!(serde_json::to_string(&toml)?, r#"{"workspace":{"package":{"version":"0.1.0"}}}"#);
 //! # Ok(()) }
-//! ```
-//!
-//! # Great error messages
-//!
-//! When deserialization fails, you get the exact path of where the failure occurred.
-//!
-//! ```
-//! use serde_cursor::Cursor;
-//!
-//! let data = serde_json::json!({ "author": { "id": "not-a-number" } });
-//! let result = serde_json::from_value::<Cursor!(author.id: i32)>(data);
-//! let err = result.unwrap_err().to_string();
-//! assert_eq!(err, r#".author.id: invalid type: string "not-a-number", expected i32"#);
 //! ```
 //!
 //! # How does it work?

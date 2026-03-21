@@ -237,6 +237,19 @@ let data = r#"{ "count": 1, "commits": [{"author": "Ferris"}] }"#;
 let data: Data = serde_json::from_str(data)?;
 ```
 
+## Great error messages
+
+When deserialization fails, you get the exact path of where the failure occurred.
+
+```rust
+use serde_cursor::Cursor;
+
+let data = serde_json::json!({ "author": { "id": "not-a-number" } });
+let result = serde_json::from_value::<Cursor!(author.id: i32)>(data);
+let err = result.unwrap_err().to_string();
+assert_eq!(err, r#".author.id: invalid type: string "not-a-number", expected i32"#);
+```
+
 ## `serde_with` integration
 
 If `feature = "serde_with"` is enabled, [`Cursor`](https://docs.rs/serde_cursor/latest/serde_cursor/struct.Cursor.html) will implement [`serde_with::DeserializeAs`](https://docs.rs/serde_with/3.18.0/serde_with/de/trait.DeserializeAs.html) and [`serde_with::SerializeAs`](https://docs.rs/serde_with/3.18.0/serde_with/ser/trait.SerializeAs.html),
@@ -257,19 +270,6 @@ struct CargoToml {
 let toml: CargoToml = toml::from_str("workspace = { package = { version = '0.1.0' } }")?;
 assert_eq!(toml.version, "0.1.0");
 assert_eq!(serde_json::to_string(&toml)?, r#"{"workspace":{"package":{"version":"0.1.0"}}}"#);
-```
-
-## Great error messages
-
-When deserialization fails, you get the exact path of where the failure occurred.
-
-```rust
-use serde_cursor::Cursor;
-
-let data = serde_json::json!({ "author": { "id": "not-a-number" } });
-let result = serde_json::from_value::<Cursor!(author.id: i32)>(data);
-let err = result.unwrap_err().to_string();
-assert_eq!(err, r#".author.id: invalid type: string "not-a-number", expected i32"#);
 ```
 
 ## How does it work?
