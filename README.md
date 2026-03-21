@@ -25,7 +25,7 @@ This crate allows you to declaratively specify how to fetch the desired parts of
 efficiently, without loading it all into memory, using a [jq](https://jqlang.org/tutorial/)-like language.
 
 ```toml
-serde_cursor = "0.1"
+serde_cursor = "0.2"
 ```
 
 ## Examples
