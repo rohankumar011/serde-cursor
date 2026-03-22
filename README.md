@@ -166,6 +166,32 @@ You can access specific elements of an array:
 Cursor!(package.0.name)
 ```
 
+### Interpolations
+
+It’s not uncommon for multiple queries to get quite repetitive:
+
+```rust
+let pressure: Vec<f64> = toml::from_str::<Cursor!(france.properties.timeseries.*.data.instant.details.air_pressure_at_sea_level)>(france)?.0;
+let humidity: Vec<f64> = toml::from_str::<Cursor!(japan.properties.timeseries.*.data.instant.details.relative_humidity)>(japan)?.0;
+let temperature: Vec<f64> = toml::from_str::<Cursor!(japan.properties.timeseries.*.data.instant.details.air_temperature)>(japan)?.0;
+```
+
+`serde_cursor` supports **interpolations**. You can factor out the common path into a type `Details`, and then interpolate it with `$Details` in the path.
+
+```rust
+use serde_cursor::CursorPath;
+
+type Details<RestOfPath> = CursorPath!(properties.timeseries.*.data.instant.details + RestOfPath);
+
+let pressure: Vec<f64> = toml::from_str::<Cursor!(france.$Details.air_pressure_at_sea_level)>(france)?.0;
+let humidity: Vec<f64> = toml::from_str::<Cursor!(japan.$Details.relative_humidity)>(japan)?.0;
+let temperature: Vec<f64> = toml::from_str::<Cursor!(japan.$Details.air_temperature)>(japan)?.0;
+```
+
+In a cursor path, everything after in an interpolation gets passed as that type’s generic. So, `Cursor!(japan.$Details.air_temperature)` calls
+`Details<.air_temperature>`, and that `+ RestOfPath` at the end of the `CursorPath!` macro call in the definition of the `Details<RestOfPath>` type means
+the `.air_temperature` path is added at the end of the cursor path, becoming `CursorPath!(properties.timeseries.*.data.instant.details.air_temperature)`.
+
 ## `serde_cursor` vs [`serde_query`](https://github.com/pandaman64/serde-query)
 
 `serde_query` also implements jq-like queries, but more verbosely.
