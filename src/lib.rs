@@ -340,7 +340,7 @@
 //!
 //! # `serde_with` integration
 //!
-//! If `feature = "serde_with"` is enabled, [`Cursor`](struct@Cursor) will implement [`serde_with::DeserializeAs`] and [`serde_with::SerializeAs`],
+//! If `feature = "serde_with"` is enabled, the type returned by `Cursor!` will implement [`serde_with::DeserializeAs`] and [`serde_with::SerializeAs`],
 //! meaning you can use it with the `#[serde_as]` attribute:
 //!
 //! ```
@@ -388,7 +388,7 @@
 //! dependencies = ["find-msvc-tools", "shlex"]
 //! ```
 //!
-//! That macro is expanded into a [Cursor](struct@Cursor) type, which implements [Deserialize](serde_core::Deserialize) and [Serialize](serde_core::Serialize):
+//! That macro is expanded into a `Cursor` type, which implements [Deserialize](serde_core::Deserialize) and [Serialize](serde_core::Serialize):
 //!
 //! ```rust
 //! # /*
@@ -431,9 +431,8 @@ mod de;
 mod path_segment;
 mod ser;
 
-use core::fmt;
-use core::marker::PhantomData;
-
+#[doc(inline)]
+pub use cursor::Cursor;
 #[doc(hidden)]
 pub use de::DeserializePath;
 #[doc(hidden)]
@@ -482,73 +481,78 @@ pub use serde_cursor_impl::Cursor;
 #[doc(inline)]
 pub use serde_cursor_impl::Path;
 
-/// Type returned by the [`Cursor!`] macro.
-#[doc(hidden)]
-pub struct Cursor<T, P>(pub T, #[doc(hidden)] pub PhantomData<P>);
+mod cursor {
+    use core::fmt;
+    use std::marker::PhantomData;
 
-impl<T, P> From<T> for Cursor<T, P> {
-    fn from(value: T) -> Self {
-        Self(value, PhantomData)
+    /// Type returned by the [`Cursor!`] macro.
+    #[doc(hidden)]
+    pub struct Cursor<T, P>(pub T, #[doc(hidden)] pub PhantomData<P>);
+
+    impl<T, P> From<T> for Cursor<T, P> {
+        fn from(value: T) -> Self {
+            Self(value, PhantomData)
+        }
     }
-}
 
-impl<T, P> std::ops::Deref for Cursor<T, P> {
-    type Target = T;
-    fn deref(&self) -> &Self::Target {
-        &self.0
+    impl<T, P> std::ops::Deref for Cursor<T, P> {
+        type Target = T;
+        fn deref(&self) -> &Self::Target {
+            &self.0
+        }
     }
-}
 
-impl<T: fmt::Debug, P> fmt::Debug for Cursor<T, P> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_tuple("Cursor").field(&self.0).finish()
+    impl<T: fmt::Debug, P> fmt::Debug for Cursor<T, P> {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_tuple("Cursor").field(&self.0).finish()
+        }
     }
-}
 
-impl<T: Clone, P> Clone for Cursor<T, P> {
-    fn clone(&self) -> Self {
-        Self(self.0.clone(), self.1)
+    impl<T: Clone, P> Clone for Cursor<T, P> {
+        fn clone(&self) -> Self {
+            Self(self.0.clone(), self.1)
+        }
     }
-}
 
-impl<T: Copy, P> Copy for Cursor<T, P> {}
+    impl<T: Copy, P> Copy for Cursor<T, P> {}
 
-impl<T: Default, P> Default for Cursor<T, P> {
-    fn default() -> Self {
-        Self(Default::default(), PhantomData)
+    impl<T: Default, P> Default for Cursor<T, P> {
+        fn default() -> Self {
+            Self(Default::default(), PhantomData)
+        }
     }
-}
 
-impl<T: fmt::Display, P> fmt::Display for Cursor<T, P> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        <T as fmt::Display>::fmt(&self.0, f)
+    impl<T: fmt::Display, P> fmt::Display for Cursor<T, P> {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            <T as fmt::Display>::fmt(&self.0, f)
+        }
     }
-}
 
-impl<T: core::hash::Hash, P> core::hash::Hash for Cursor<T, P> {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.0.hash(state);
-        self.1.hash(state);
+    impl<T: core::hash::Hash, P> core::hash::Hash for Cursor<T, P> {
+        fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+            self.0.hash(state);
+            self.1.hash(state);
+        }
     }
-}
 
-impl<T: Eq, P> Eq for Cursor<T, P> {}
+    impl<T: Eq, P> Eq for Cursor<T, P> {}
 
-impl<T: PartialEq, P> PartialEq for Cursor<T, P> {
-    fn eq(&self, other: &Self) -> bool {
-        <T as PartialEq>::eq(&self.0, &other.0)
+    impl<T: PartialEq, P> PartialEq for Cursor<T, P> {
+        fn eq(&self, other: &Self) -> bool {
+            <T as PartialEq>::eq(&self.0, &other.0)
+        }
     }
-}
 
-impl<T: PartialOrd, P> PartialOrd for Cursor<T, P> {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        <T as PartialOrd>::partial_cmp(&self.0, &other.0)
+    impl<T: PartialOrd, P> PartialOrd for Cursor<T, P> {
+        fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+            <T as PartialOrd>::partial_cmp(&self.0, &other.0)
+        }
     }
-}
 
-impl<T: Ord, P> core::cmp::Ord for Cursor<T, P> {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        <T as Ord>::cmp(&self.0, &other.0)
+    impl<T: Ord, P> core::cmp::Ord for Cursor<T, P> {
+        fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+            <T as Ord>::cmp(&self.0, &other.0)
+        }
     }
 }
 
@@ -562,17 +566,17 @@ pub mod implementation_details {
     #[doc(inline)]
     pub use crate::const_str;
     #[doc(inline)]
-    pub use crate::ConstPathSegment;
+    pub use crate::cursor::Cursor;
     #[doc(inline)]
-    pub use crate::Cursor;
+    pub use crate::path::Path;
+    #[doc(inline)]
+    pub use crate::ConstPathSegment;
     #[doc(inline)]
     pub use crate::DeserializePath;
     #[doc(inline)]
     pub use crate::Field;
     #[doc(inline)]
     pub use crate::Index;
-    #[doc(inline)]
-    pub use crate::Path;
     #[doc(inline)]
     pub use crate::PathEnd;
     #[doc(inline)]
@@ -600,13 +604,20 @@ pub use const_str::Char4Byte as C4;
 #[doc(hidden)]
 pub use const_str::StrLen;
 
-/// Represents the end of the cursor path.
-#[doc(hidden)]
-pub struct PathEnd;
+mod path {
+    use std::marker::PhantomData;
 
-/// Represents a single segment of a cursor path.
-#[doc(hidden)]
-pub struct Path<S, P>(PhantomData<(S, P)>);
+    /// Represents the end of the cursor path.
+    #[doc(hidden)]
+    pub struct PathEnd;
+
+    /// Represents a single segment of a cursor path.
+    #[doc(hidden)]
+    pub struct Path<S, P>(PhantomData<(S, P)>);
+}
+
+pub use path::Path;
+pub use path::PathEnd;
 
 /// Represents the `*` in `Cursor!(package.*.name)`.
 #[doc(hidden)]

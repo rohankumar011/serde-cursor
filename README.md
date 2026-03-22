@@ -272,7 +272,7 @@ assert_eq!(err, r#".author.id: invalid type: string "not-a-number", expected i32
 
 ## `serde_with` integration
 
-If `feature = "serde_with"` is enabled, [`Cursor`](struct@Cursor) will implement [`serde_with::DeserializeAs`](https://docs.rs/serde_with/3.18.0/serde_with/de/trait.DeserializeAs.html) and [`serde_with::SerializeAs`](https://docs.rs/serde_with/3.18.0/serde_with/ser/trait.SerializeAs.html),
+If `feature = "serde_with"` is enabled, the type returned by `Cursor!` will implement [`serde_with::DeserializeAs`](https://docs.rs/serde_with/3.18.0/serde_with/de/trait.DeserializeAs.html) and [`serde_with::SerializeAs`](https://docs.rs/serde_with/3.18.0/serde_with/ser/trait.SerializeAs.html),
 meaning you can use it with the `#[serde_as]` attribute:
 
 ```rust
@@ -315,7 +315,7 @@ name = "cc"
 dependencies = ["find-msvc-tools", "shlex"]
 ```
 
-That macro is expanded into a [Cursor](struct@Cursor) type, which implements [Deserialize](https://docs.rs/serde_core/1.0.228/serde_core/de/trait.Deserialize.html) and [Serialize](https://docs.rs/serde_core/1.0.228/serde_core/ser/trait.Serialize.html):
+That macro is expanded into a `Cursor` type, which implements [Deserialize](https://docs.rs/serde_core/1.0.228/serde_core/de/trait.Deserialize.html) and [Serialize](https://docs.rs/serde_core/1.0.228/serde_core/ser/trait.Serialize.html):
 
 ```rust
 Cursor<
