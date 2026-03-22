@@ -222,7 +222,7 @@ enum PathSegment {
         /// Cursor!(package.$Deps.0)
         ///                 ^
         /// ```
-        #[expect(unused)]
+        #[allow(unused)]
         dollar: Span,
     },
     /// Field with a name.
