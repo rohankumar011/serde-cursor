@@ -379,7 +379,7 @@
 //!
 //! Once the path is empty, we finally get to the type of the field - the `String` in the above example,
 //! and finally call [`serde::Deserialize::deserialize()`](https://docs.rs/serde/latest/serde/trait.Deserialize.html#tymethod.deserialize) on that, to finish things off -
-//! this `String` is then bubbled up the stack and returned from `<Cursor as serde::Deserialize>::deserialize`.
+//! this `String` is then bubbled up the stack and returned from `<Cursor<String, _> as serde::Deserialize>::deserialize`.
 #![cfg_attr(doc, feature(doc_cfg))]
 #![allow(rustdoc::invalid_rust_codeblocks)]
 
