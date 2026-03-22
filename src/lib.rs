@@ -67,7 +67,7 @@
 //!
 //! ## Get names of all dependencies from `Cargo.lock`
 //!
-//! The wildcard `.*` accesses every element in an array:
+//! The index-all `.*` accesses every element in an array:
 //!
 //! ```
 //! use serde_cursor::Cursor;
@@ -349,7 +349,7 @@
 //!     Path<
 //!         Field<"package">,
 //!         Path<
-//!             Wildcard,
+//!             IndexAll,
 //!             Path<
 //!                 Field<"dependencies">,
 //!                 Path<Index<0>, PathEnd>,
@@ -364,7 +364,7 @@
 //!
 //! ```rust
 //! # /*
-//! vec![Segment::Field("package"), Segment::Wildcard, Segment::Field("dependencies"), Segment::Index(0)]
+//! vec![Segment::Field("package"), Segment::IndexAll, Segment::Field("dependencies"), Segment::Index(0)]
 //! # */
 //! ```
 //!
@@ -394,9 +394,9 @@ pub use path_segment::Field;
 #[doc(hidden, inline)]
 pub use path_segment::Index;
 #[doc(hidden, inline)]
-pub use path_segment::PathSegment;
+pub use path_segment::IndexAll;
 #[doc(hidden, inline)]
-pub use path_segment::Wildcard;
+pub use path_segment::PathSegment;
 #[doc(hidden, inline)]
 pub use ser::SerializePath;
 #[doc(inline)]
@@ -503,13 +503,13 @@ pub mod implementation_details {
     #[doc(inline)]
     pub use crate::Index;
     #[doc(inline)]
+    pub use crate::IndexAll;
+    #[doc(inline)]
     pub use crate::PathEnd;
     #[doc(inline)]
     pub use crate::Sequence;
     #[doc(inline)]
     pub use crate::SerializePath;
-    #[doc(inline)]
-    pub use crate::Wildcard;
 }
 
 #[doc(hidden)]

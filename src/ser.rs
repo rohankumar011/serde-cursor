@@ -7,10 +7,10 @@ use serde_core::ser::Serializer;
 
 use crate::ConstPathSegment;
 use crate::Cursor;
+use crate::IndexAll;
 use crate::Path;
 use crate::PathEnd;
 use crate::PathSegment;
-use crate::Wildcard;
 
 impl<T, P> serde_core::Serialize for Cursor<T, P>
 where
@@ -105,7 +105,7 @@ where
     }
 }
 
-// now for the Wildcard step: Cursor!(packages.*.name: Vec<String>)
+// now for the IndexAll step: Cursor!(packages.*.name: Vec<String>)
 //                                             ^ we are here
 //
 // If the value is ["a", "b"], this produces:
@@ -114,7 +114,7 @@ where
 //   { "name": "a" },
 //   { "name": "b" }
 // ]
-impl<P, T, C> SerializePath<C> for Path<Wildcard, P>
+impl<P, T, C> SerializePath<C> for Path<IndexAll, P>
 where
     for<'a> &'a C: IntoIterator<Item = &'a T>,
     P: SerializePath<T>,

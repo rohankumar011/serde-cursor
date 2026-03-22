@@ -2,7 +2,7 @@ use serde_cursor::Cursor;
 use serde_json::json;
 
 #[test]
-fn matrix_wildcards() {
+fn matrix_index_all() {
     let json = json!({
         "matrix": [
             [{"v": 1}, {"v": 2}],
@@ -20,7 +20,7 @@ fn matrix_wildcards() {
 }
 
 #[test]
-fn wildcard_with_missing_fields() {
+fn index_all_with_missing_fields() {
     // some objects have 'val', one has 'other', one is empty
     let json = json!([
         { "val": 1 },

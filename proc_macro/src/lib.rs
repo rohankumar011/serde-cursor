@@ -197,7 +197,7 @@ fn build_path(cursor_path_segments: Vec<PathSegment>, end: TokenStream) -> Token
                     ts.extend([punct('>')]);
                     ts
                 }
-                PathSegment::Wildcard(_span) => path([ident("Wildcard")]),
+                PathSegment::IndexAll(_span) => path([ident("IndexAll")]),
             };
 
             let mut ts = path([ident("Path")]);
@@ -263,7 +263,7 @@ fn parse_path_segments(
 /// Represents a single segment of a path.
 #[derive(Debug)]
 enum PathSegment {
-    /// The Wildcard, `*`.
+    /// The index-all, `*`.
     ///
     /// ```txt
     /// Cursor!(packages.*.name)
@@ -271,7 +271,7 @@ enum PathSegment {
     /// ```
     ///
     /// The `Span` is of the `*` token.
-    Wildcard(Span),
+    IndexAll(Span),
     /// An interpolated path segment
     ///
     /// ```txt
@@ -399,7 +399,7 @@ fn parse_path_segment(
         TokenTree::Punct(p) if p.as_char() == '*' => {
             let span = p.span();
             let _ = input.next();
-            Ok(PathSegment::Wildcard(span))
+            Ok(PathSegment::IndexAll(span))
         }
         TokenTree::Literal(lit) => {
             let span = lit.span();

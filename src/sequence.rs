@@ -6,7 +6,7 @@ use std::hash::Hash;
 
 /// Sequences of items, such as [`Vec<T>`] or [`HashSet<T>`].
 ///
-/// The purpose of this trait is to enable the wildcard `.*.` syntax
+/// The purpose of this trait is to enable the index-all `.*.` syntax
 /// when collecting fields of an array:
 ///
 /// ```toml
@@ -17,7 +17,7 @@ use std::hash::Hash;
 /// rand = "0.9"
 /// ```
 ///
-/// The wildcard `.*` accesses every element in an array:
+/// The index-all `.*` accesses every element in an array:
 ///
 /// ```
 /// # mod fs { pub fn read_to_string(_: &str) -> Result<String, Box<dyn std::error::Error>> { Ok(String::from("package = [{ name = 'serde' }, { name = 'rand' }]")) } }

@@ -71,7 +71,7 @@ pub struct Index<const N: usize>;
 /// Path segment for accessing all elements of a sequence.
 /// Represents the `*` in `Cursor!(package.*.dependencies.0)`.
 #[doc(hidden)]
-pub struct Wildcard;
+pub struct IndexAll;
 
 impl<S: ConstStr> ConstPathSegment for Field<S, false> {
     const VALUE: PathSegment = PathSegment::Field(S::VALUE);

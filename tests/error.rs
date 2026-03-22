@@ -22,7 +22,7 @@ fn test_error_type_mismatch() {
 }
 
 #[test]
-fn test_error_wildcard_index_tracking() {
+fn test_error_index_all_index_tracking() {
     let data = json!([
         { "name": "alice" },
         { "typo": "bob" }
@@ -35,7 +35,7 @@ fn test_error_wildcard_index_tracking() {
 }
 
 #[test]
-fn test_error_deep_wildcard_mismatch() {
+fn test_error_deep_index_all_mismatch() {
     let data = json!({
         "org": {
             "users": [

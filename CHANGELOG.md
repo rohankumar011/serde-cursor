@@ -30,6 +30,7 @@ Renamed some internal types that are **mostly implementation details**, but avai
 |`Nil`|`PathEnd`|
 |`Cons`|`Path`|
 |`FieldName`|`Field`|
+|`Wildcard`|`IndexAll`|
 |`SerializeCursor`|`SerializePath`|
 
 ## [v0.2.1] - 2026-03-21

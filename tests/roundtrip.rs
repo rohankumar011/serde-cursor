@@ -61,7 +61,7 @@ fn with_dashes() {
 }
 
 #[test]
-fn wildcard_collection() {
+fn index_all_collection() {
     let json = json!([
         { "val": 10 },
         { "val": 20 }
@@ -83,7 +83,7 @@ fn mixed_nested_path() {
 }
 
 #[test]
-fn nested_wildcards() {
+fn nested_index_all() {
     let json = json!({
         "groups": [
             { "members": [{ "name": "A" }, { "name": "B" }] },
@@ -100,7 +100,7 @@ fn nested_wildcards() {
 }
 
 #[test]
-fn complex_wildcard_objects() {
+fn complex_index_all_objects() {
     let json = json!({
         "data": [
             { "info": { "code": 1 } },

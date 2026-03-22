@@ -11,11 +11,11 @@ use serde_core::Deserializer;
 
 use crate::ConstPathSegment;
 use crate::Cursor;
+use crate::IndexAll;
 use crate::Path;
 use crate::PathEnd;
 use crate::PathSegment;
 use crate::Sequence;
-use crate::Wildcard;
 
 impl<'de, T, P> Deserialize<'de> for Cursor<T, P>
 where
@@ -318,7 +318,7 @@ where
     }
 }
 
-/// Visitor for the Wildcard (`*`) path segment.
+/// Visitor for the index-all (`.*`) path segment.
 ///
 /// ```txt
 /// Cursor!(package.*.name: Vec<String>)
@@ -329,11 +329,11 @@ where
 ///
 /// In this case every `name` field corresponds to `String`, all of the
 /// `name`s will be collected into a single `Vec<String>`.
-struct WildcardVisitor<P, C> {
+struct IndexAllVisitor<P, C> {
     _marker: PhantomData<(P, C)>,
 }
 
-impl<'de, P, C> DeserializePath<'de, C> for Path<Wildcard, P>
+impl<'de, P, C> DeserializePath<'de, C> for Path<IndexAll, P>
 where
     C: Sequence,
     P: DeserializePath<'de, C::Item>,
@@ -343,13 +343,13 @@ where
     where
         D: Deserializer<'de>,
     {
-        deserializer.deserialize_seq(WildcardVisitor::<P, C> {
+        deserializer.deserialize_seq(IndexAllVisitor::<P, C> {
             _marker: PhantomData,
         })
     }
 }
 
-impl<'de, P, C> Visitor<'de> for WildcardVisitor<P, C>
+impl<'de, P, C> Visitor<'de> for IndexAllVisitor<P, C>
 where
     C: Sequence,
     P: DeserializePath<'de, C::Item>,

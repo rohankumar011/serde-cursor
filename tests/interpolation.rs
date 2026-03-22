@@ -57,7 +57,7 @@ fn in_middle() -> evil::Result {
 }
 
 #[test]
-fn with_wildcard() -> evil::Result {
+fn with_index_all() -> evil::Result {
     let make_weather = |pressure: f64, humidity: f64, temp: f64| {
         json!({
             "properties": {
