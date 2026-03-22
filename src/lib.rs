@@ -367,7 +367,12 @@
 //!
 //! ```rust
 //! # /*
-//! vec![Segment::Field("package"), Segment::IndexAll, Segment::Field("dependencies"), Segment::Index(0)]
+//! vec![
+//!     Segment::Field("package"), // .package
+//!     Segment::IndexAll, // .*
+//!     Segment::Field("dependencies"), // .dependencies
+//!     Segment::Index(0) // .0
+//! ]
 //! # */
 //! ```
 //!

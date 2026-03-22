@@ -303,7 +303,12 @@ Cursor<
 The above is essentially an equivalent to:
 
 ```rust
-vec![Segment::Field("package"), Segment::IndexAll, Segment::Field("dependencies"), Segment::Index(0)]
+vec![
+    Segment::Field("package"), // .package
+    Segment::IndexAll, // .*
+    Segment::Field("dependencies"), // .dependencies
+    Segment::Index(0) // .0
+]
 ```
 
 Except it exists entirely in the type system.
