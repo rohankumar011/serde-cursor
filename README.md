@@ -140,7 +140,7 @@ let humidity: Vec<f64> = toml::from_str::<Cursor!(japan.properties.timeseries.*.
 let temperature: Vec<f64> = toml::from_str::<Cursor!(japan.properties.timeseries.*.data.instant.details.air_temperature)>(japan)?.0;
 ```
 
-`serde_cursor` supports **interpolations**. You can factor out the common path into a type `Details`, and then interpolate it with `$Details` in the path.
+`serde_cursor` supports **interpolations**. You can factor out a common path into a type `Details`, and then interpolate it with `$Details` in the path inside `Cursor!`:
 
 ```rust
 type Details<RestOfPath> = serde_cursor::Path!(properties.timeseries.*.data.instant.details + RestOfPath);

@@ -182,7 +182,7 @@
 //! # Ok(()) }
 //! ```
 //!
-//! `serde_cursor` supports **interpolations**. You can factor out the common path into a type `Details`, and then interpolate it with `$Details` in the path.
+//! `serde_cursor` supports **interpolations**. You can factor out a common path into a type `Details`, and then interpolate it with `$Details` in the path inside `Cursor!`:
 //!
 //! ```
 //! # use serde_json::from_str;
