@@ -48,11 +48,11 @@ use crate::path;
 use crate::punct;
 
 /// Encodes a string literal into a nested type-level representation:
-/// `FieldName<(StrLen<N>, ( ... nested tuples of characters ... ))>`
+/// `Field<(StrLen<N>, ( ... nested tuples of characters ... ))>`
 pub fn encode(value: &str, spans: &[Span]) -> TokenStream {
     // encoding of empty string
     if value.is_empty() {
-        let mut ts = path([ident("FieldName")]);
+        let mut ts = path([ident("Field")]);
         ts.extend([punct('<')]);
 
         let mut tuple = TokenStream::new();
@@ -152,8 +152,8 @@ pub fn encode(value: &str, spans: &[Span]) -> TokenStream {
 
     // 3/3: assembly
 
-    // wrap the final tree root in FieldName<(StrLen<L>, Root)>
-    let mut ts = path([ident("FieldName")]);
+    // wrap the final tree root in Field<(StrLen<L>, Root)>
+    let mut ts = path([ident("Field")]);
     ts.extend([punct('<')]);
 
     let mut inner_tuple = TokenStream::new();
@@ -175,14 +175,14 @@ pub fn encode(value: &str, spans: &[Span]) -> TokenStream {
         inner_tuple,
     ))));
 
-    // See the comment on `FieldName` for WHY we create a bunch of garbage
+    // See the comment on `Field` for WHY we create a bunch of garbage
     // tokens that aren't used for anything. (tldr: syntax-highlighting in IDEs)
     //
     // ```txt
-    // FieldName<..., { ["", "", ""]; false }>
-    //                   ^^ "dev"
-    //                       ^^ "-"
-    //                           ^^ "dependencies"
+    // Field<..., { ["", "", ""]; false }>
+    //               ^^ "dev"
+    //                   ^^ "-"
+    //                       ^^ "dependencies"
     // ```
     {
         ts.extend([punct(',')]);

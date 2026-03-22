@@ -1,14 +1,14 @@
 //! Tests for `$Interpolation` syntax.
 
 use serde_cursor::Cursor;
-use serde_cursor::CursorPath;
+use serde_cursor::Path;
 use serde_json::json;
 
 #[test]
 fn at_end() -> evil::Result {
     let data = json!({ "properties": { "timeseries": [1.0] } });
 
-    type Details<T> = CursorPath!(timeseries + T);
+    type Details<T> = Path!(timeseries + T);
 
     let timeseries: Vec<f64> = serde_json::from_value::<Cursor!(properties.$Details)>(data)?.0;
 
@@ -21,7 +21,7 @@ fn at_end() -> evil::Result {
 fn at_start() -> evil::Result {
     let data = json!({ "properties": { "timeseries": [1.0] } });
 
-    type Details<T> = CursorPath!(properties + T);
+    type Details<T> = Path!(properties + T);
 
     let timeseries: Vec<f64> = serde_json::from_value::<Cursor!($Details.timeseries)>(data)?.0;
 
@@ -34,7 +34,7 @@ fn at_start() -> evil::Result {
 fn entire() -> evil::Result {
     let data = json!({ "properties": { "timeseries": [1.0] } });
 
-    type Details<T> = CursorPath!(properties.timeseries + T);
+    type Details<T> = Path!(properties.timeseries + T);
 
     let timeseries: Vec<f64> = serde_json::from_value::<Cursor!($Details)>(data)?.0;
 
@@ -47,7 +47,7 @@ fn entire() -> evil::Result {
 fn in_middle() -> evil::Result {
     let data = json!({ "properties": { "timeseries": { "data": [1.0] } } });
 
-    type Details<T> = CursorPath!(timeseries + T);
+    type Details<T> = Path!(timeseries + T);
 
     let timeseries: Vec<f64> = serde_json::from_value::<Cursor!(properties.$Details.data)>(data)?.0;
 
@@ -79,7 +79,7 @@ fn with_wildcard() -> evil::Result {
     let france = json!({ "france": make_weather(1.0, 2.0, 3.0) });
     let japan = json!({ "japan": make_weather(4.0, 5.0, 6.0) });
 
-    type Details<T> = CursorPath!(properties.timeseries.*.data.instant.details + T);
+    type Details<T> = Path!(properties.timeseries.*.data.instant.details + T);
 
     let pressure: Vec<f64> =
         serde_json::from_value::<Cursor!(france.$Details.air_pressure_at_sea_level)>(france)?.0;
@@ -102,7 +102,7 @@ fn path() -> evil::Result {
 
     mod inner {
         use super::*;
-        pub type Details<T> = CursorPath!(timeseries + T);
+        pub type Details<T> = Path!(timeseries + T);
     }
 
     let timeseries: Vec<f64> =

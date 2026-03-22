@@ -1,5 +1,5 @@
 error[E0412]: cannot find type `T` in this scope
- --> tests/ui/missing_generic.rs:4:32
+ --> tests/ui/missing_generic.rs:4:26
   |
-4 | type X = CursorPath!(foo.bar + T);
-  |                                ^ not found in this scope
+4 | type X = Path!(foo.bar + T);
+  |                          ^ not found in this scope

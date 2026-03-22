@@ -21,6 +21,17 @@ let humidity: Vec<f64> = toml::from_str::<Cursor!(japan.$Details.relative_humidi
 let temperature: Vec<f64> = toml::from_str::<Cursor!(japan.$Details.air_temperature)>(japan)?.0;
 ```
 
+### Changed
+
+Renamed some internal types that are **mostly implementation details**, but available in case you need to use them for some reason.
+
+|old|new|
+|---|---|
+|`Nil`|`PathEnd`|
+|`Cons`|`Path`|
+|`FieldName`|`Field`|
+|`SerializeCursor`|`SerializePath`|
+
 ## [v0.2.1] - 2026-03-21
 
 [v0.2.1]: https://github.com/nik-rev/serde-cursor/compare/v0.2.0...v0.2.1

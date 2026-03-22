@@ -51,12 +51,12 @@ pub trait ConstPathSegment {
 /// a concrete token.
 ///
 /// ```txt
-/// FieldName<..., { ["", "", ""]; false }>
-///                   ^^ "dev"
-///                       ^^ "-"
-///                           ^^ "dependencies"
+/// Field<..., { ["", "", ""]; false }>
+///               ^^ "dev"
+///                   ^^ "-"
+///                       ^^ "dependencies"
 /// ```
-pub struct FieldName<S: ConstStr, const Z: bool>(PhantomData<S>);
+pub struct Field<S: ConstStr, const Z: bool>(PhantomData<S>);
 
 /// Path segment representing an index into a sequence.
 ///
@@ -66,7 +66,7 @@ pub struct FieldName<S: ConstStr, const Z: bool>(PhantomData<S>);
 /// ```
 pub struct Index<const N: usize>;
 
-impl<S: ConstStr> ConstPathSegment for FieldName<S, false> {
+impl<S: ConstStr> ConstPathSegment for Field<S, false> {
     const VALUE: PathSegment = PathSegment::Field(S::VALUE);
 }
 

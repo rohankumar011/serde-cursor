@@ -7,27 +7,27 @@ use serde_core::ser::Serializer;
 
 use crate::ConstPathSegment;
 use crate::Cursor;
-use crate::CursorPath;
-use crate::CursorPathEnd;
+use crate::Path;
+use crate::PathEnd;
 use crate::PathSegment;
 use crate::Wildcard;
 
 impl<T, P> serde_core::Serialize for Cursor<T, P>
 where
-    P: SerializeCursor<T>,
+    P: SerializePath<T>,
 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde_core::Serializer,
     {
-        <P as SerializeCursor<T>>::serialize(&self.0, serializer)
+        <P as SerializePath<T>>::serialize(&self.0, serializer)
     }
 }
 
 /// Serializes the path to the type returned by [`Cursor!`].
 ///
 /// For more information, see the [crate-level](crate) documentation.
-pub trait SerializeCursor<T> {
+pub trait SerializePath<T> {
     fn serialize<S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer;
@@ -37,7 +37,7 @@ pub trait SerializeCursor<T> {
 //
 // Cursor!(package.name: String)
 //                     ^ we are here
-impl<T: Serialize> SerializeCursor<T> for CursorPathEnd {
+impl<T: Serialize> SerializePath<T> for PathEnd {
     fn serialize<S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -53,10 +53,10 @@ impl<T: Serialize> SerializeCursor<T> for CursorPathEnd {
 //         ^^^^^^^ we are here
 //
 // This produces: { "package": <rest of path> }
-impl<S, P, T> SerializeCursor<T> for CursorPath<S, P>
+impl<S, P, T> SerializePath<T> for Path<S, P>
 where
     S: ConstPathSegment,
-    P: SerializeCursor<T>,
+    P: SerializePath<T>,
 {
     fn serialize<Ser>(value: &T, serializer: Ser) -> Result<Ser::Ok, Ser::Error>
     where
@@ -114,10 +114,10 @@ where
 //   { "name": "a" },
 //   { "name": "b" }
 // ]
-impl<P, T, C> SerializeCursor<C> for CursorPath<Wildcard, P>
+impl<P, T, C> SerializePath<C> for Path<Wildcard, P>
 where
     for<'a> &'a C: IntoIterator<Item = &'a T>,
-    P: SerializeCursor<T>,
+    P: SerializePath<T>,
 {
     fn serialize<S>(value: &C, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -139,13 +139,13 @@ struct ToCursorWrapper<'a, P, T>(&'a T, PhantomData<P>);
 
 impl<'a, P, T> Serialize for ToCursorWrapper<'a, P, T>
 where
-    P: SerializeCursor<T>,
+    P: SerializePath<T>,
 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        <P as SerializeCursor<T>>::serialize(self.0, serializer)
+        <P as SerializePath<T>>::serialize(self.0, serializer)
     }
 }
 
@@ -153,12 +153,12 @@ where
 impl<T, P> serde_with::SerializeAs<T> for Cursor<T, P>
 where
     T: Serialize,
-    P: SerializeCursor<T>,
+    P: SerializePath<T>,
 {
     fn serialize_as<S>(source: &T, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde_core::Serializer,
     {
-        <P as SerializeCursor<T>>::serialize(source, serializer)
+        <P as SerializePath<T>>::serialize(source, serializer)
     }
 }

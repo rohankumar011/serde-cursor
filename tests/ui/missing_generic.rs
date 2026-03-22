@@ -1,6 +1,6 @@
-use serde_cursor::CursorPath;
+use serde_cursor::Path;
 
 // T must be a type parameter that's available in the current scope
-type X = CursorPath!(foo.bar + T);
+type X = Path!(foo.bar + T);
 
 fn main() {}

@@ -1,6 +1,6 @@
-use serde_cursor::CursorPath;
+use serde_cursor::Path;
 
 // path must exist
-type X<T> = CursorPath!(+ T);
+type X<T> = Path!(+ T);
 
 fn main() {}

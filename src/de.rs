@@ -11,8 +11,8 @@ use serde_core::Deserializer;
 
 use crate::ConstPathSegment;
 use crate::Cursor;
-use crate::CursorPath;
-use crate::CursorPathEnd;
+use crate::Path;
+use crate::PathEnd;
 use crate::PathSegment;
 use crate::Sequence;
 use crate::Wildcard;
@@ -50,7 +50,7 @@ pub trait DeserializePath<'de, T> {
 //                   ^^^^ we are here
 //
 // So we call: <String as Deserialize>::deserialize
-impl<'de, T: Deserialize<'de>> DeserializePath<'de, T> for CursorPathEnd {
+impl<'de, T: Deserialize<'de>> DeserializePath<'de, T> for PathEnd {
     fn deserialize<D>(deserializer: D) -> Result<T, D::Error>
     where
         D: Deserializer<'de>,
@@ -65,11 +65,11 @@ impl<'de, T: Deserialize<'de>> DeserializePath<'de, T> for CursorPathEnd {
 // Cursor!(package.name: String)
 //         ^^^^^^^ we may be here
 //
-// CursorPath<
+// Path<
 //     Field<"package">, <-- we may be here
-//     CursorPath<
+//     Path<
 //         Field<"name">,
-//         CursorPathEnd
+//         PathEnd
 //     >
 // >
 //
@@ -83,17 +83,17 @@ impl<'de, T: Deserialize<'de>> DeserializePath<'de, T> for CursorPathEnd {
 // Cursor!(package.name.whatever: String)
 //                 ^^^^^^^^^^^^^^^^^^^ all of this will be deserialized in this step
 //
-// CursorPath<
+// Path<
 //     Field<"package">,
 //
-//     CursorPath<        |
+//     Path<        |
 //         Field<"name">, |
-//         CursorPathEnd  |
+//         PathEnd  |
 //     >                  |
 //     ^^^^^^^^^^^^^^^^^^^^ all of this will be deserialized (a single recursive step)
 // >
 //
-impl<'de, S, P, T> DeserializePath<'de, T> for CursorPath<S, P>
+impl<'de, S, P, T> DeserializePath<'de, T> for Path<S, P>
 where
     S: ConstPathSegment, // const S: PathSegment
     P: DeserializePath<'de, T>,
@@ -333,7 +333,7 @@ struct WildcardVisitor<P, C> {
     _marker: PhantomData<(P, C)>,
 }
 
-impl<'de, P, C> DeserializePath<'de, C> for CursorPath<Wildcard, P>
+impl<'de, P, C> DeserializePath<'de, C> for Path<Wildcard, P>
 where
     C: Sequence,
     P: DeserializePath<'de, C::Item>,

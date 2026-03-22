@@ -17,7 +17,7 @@ use path::Path;
 
 #[proc_macro]
 #[allow(nonstandard_style)]
-pub fn CursorPath(input: TokenStream) -> TokenStream {
+pub fn Path(input: TokenStream) -> TokenStream {
     let mut input = input.into_iter().peekable();
 
     let cursor_path_segments = match parse_path_segments(&mut input, '+') {
@@ -32,44 +32,13 @@ pub fn CursorPath(input: TokenStream) -> TokenStream {
         }
     };
 
-    // Cursor path: `CursorPath<_, CursorPath<_, T>>`
+    // Cursor path: `Path<_, Path<_, T>>`
     build_path(
         cursor_path_segments,
         TokenStream::from_iter([TokenTree::Ident(ident)]),
     )
 }
 
-/// Access nested fields of values easily.
-///
-/// ```toml
-/// # Cargo.toml
-/// [workspace.package]
-/// version = "0.1"
-/// ```
-///
-/// To access nested fields, use dotted field syntax:
-///
-/// ```
-/// # mod fs { pub fn read_to_string(_: &str) -> Result<String, Box<dyn std::error::Error>> { Ok(String::from("workspace = { package = { version = '0.1' } }")) } }
-/// use serde_cursor::Cursor;
-///
-/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-/// let data = fs::read_to_string("Cargo.toml")?;
-///
-/// let version: String = toml::from_str::<Cursor!(workspace.package.version)>(&data)?.0;
-/// assert_eq!(version, "0.1");
-/// # Ok(()) }
-/// ```
-///
-/// You can access elements of arrays:
-///
-/// ```toml
-/// # Cargo.toml
-/// [workspace.package]
-/// version = "0.1"
-/// ```
-///
-/// See the [crate-level](crate) documentation for more.
 #[proc_macro]
 #[allow(nonstandard_style)]
 pub fn Cursor(input: TokenStream) -> TokenStream {
@@ -94,11 +63,11 @@ pub fn Cursor(input: TokenStream) -> TokenStream {
         input.collect()
     };
 
-    // Cursor path: `CursorPath<_, CursorPath<_, CursorPathEnd>>`
+    // Cursor path: `Path<_, Path<_, PathEnd>>`
     let cursor_path = build_path(
         cursor_path_segments,
         TokenStream::from_iter([path([TokenTree::Ident(Ident::new(
-            "CursorPathEnd",
+            "PathEnd",
             Span::call_site(),
         ))])]),
     );
@@ -132,15 +101,15 @@ fn build_path(cursor_path_segments: Vec<PathSegment>, end: TokenStream) -> Token
 
                     let mut ts = TokenStream::from_iter(path.into_tokens());
 
-                    // Interpolated<CursorPath<...>>
+                    // Interpolated<Path<...>>
                     //             ^
                     ts.extend([punct('<')]);
 
-                    // Interpolated<CursorPath<...>>
+                    // Interpolated<Path<...>>
                     //              ^^^^^^^^^^^^^^^
                     ts.extend(p);
 
-                    // Interpolated<CursorPath<...>>
+                    // Interpolated<Path<...>>
                     //                              ^
                     ts.extend([punct('>')]);
 
@@ -159,7 +128,7 @@ fn build_path(cursor_path_segments: Vec<PathSegment>, end: TokenStream) -> Token
                 PathSegment::Wildcard(_span) => path([ident("Wildcard")]),
             };
 
-            let mut ts = path([ident("CursorPath")]);
+            let mut ts = path([ident("Path")]);
             ts.extend([punct('<')]);
             ts.extend(segment);
             ts.extend([punct(',')]);
@@ -234,7 +203,7 @@ enum PathSegment {
     /// An interpolated path segment
     ///
     /// ```txt
-    /// type Deps<T> = CursorPath!(*.dependencies.$T);
+    /// type Deps<T> = serde_cursor::Path!(*.dependencies.$T);
     ///
     /// Cursor!(package.$Deps.0)
     ///                 ^^^^^

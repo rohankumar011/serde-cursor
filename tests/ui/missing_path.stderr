@@ -1,13 +1,13 @@
 error: unexpected token
- --> tests/ui/missing_path.rs:4:25
+ --> tests/ui/missing_path.rs:4:19
   |
-4 | type X<T> = CursorPath!(+ T);
-  |                         ^
+4 | type X<T> = Path!(+ T);
+  |                   ^
 
 error[E0091]: type parameter `T` is never used
  --> tests/ui/missing_path.rs:4:8
   |
-4 | type X<T> = CursorPath!(+ T);
+4 | type X<T> = Path!(+ T);
   |        ^ unused type parameter
   |
   = help: consider removing `T` or referring to it in the body of the type alias

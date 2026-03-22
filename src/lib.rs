@@ -238,9 +238,7 @@
 //! # let france = "france = { properties = { timeseries = [{ data = { instant = { details = { air_pressure_at_sea_level = 1.0, relative_humidity = 2.0, air_temperature = 3.0 } } } }] } }";
 //! # let japan = "japan = { properties = { timeseries = [{ data = { instant = { details = { air_pressure_at_sea_level = 4.0, relative_humidity = 5.0, air_temperature = 6.0 } } } }] } }";
 //! # use serde_cursor::Cursor;
-//! use serde_cursor::CursorPath;
-//!
-//! type Details<RestOfPath> = CursorPath!(properties.timeseries.*.data.instant.details + RestOfPath);
+//! type Details<RestOfPath> = serde_cursor::Path!(properties.timeseries.*.data.instant.details + RestOfPath);
 //!
 //! let pressure: Vec<f64> = toml::from_str::<Cursor!(france.$Details.air_pressure_at_sea_level)>(france)?.0;
 //! let humidity: Vec<f64> = toml::from_str::<Cursor!(japan.$Details.relative_humidity)>(japan)?.0;
@@ -396,13 +394,13 @@
 //! # /*
 //! Cursor<
 //!     String,
-//!     CursorPath<
+//!     Path<
 //!         Field<"package">,
-//!         CursorPath<
+//!         Path<
 //!             Wildcard,
-//!             CursorPath<
+//!             Path<
 //!                 Field<"dependencies">,
-//!                 CursorPath<Index<0>, CursorPathEnd>,
+//!                 Path<Index<0>, PathEnd>,
 //!             >,
 //!         >,
 //!     >,
@@ -426,6 +424,7 @@
 //! This happens until the list is exhausted, in which case we finally get to the type of the field - the `String` in the above example,
 //! and finally call [`Deserialize::deserialize()`](https://docs.rs/serde/latest/serde/trait.Deserialize.html#tymethod.deserialize) on that, to finish things off -
 //! this `String` is then bubbled up the stack and returned from `<Cursor as Deserialize>::deserialize` .
+#![cfg_attr(doc, feature(doc_cfg))]
 #![allow(rustdoc::invalid_rust_codeblocks)]
 
 mod de;
@@ -435,18 +434,56 @@ mod ser;
 use core::fmt;
 use core::marker::PhantomData;
 
+#[doc(hidden)]
 pub use de::DeserializePath;
+#[doc(hidden)]
 pub use path_segment::ConstPathSegment;
-pub use path_segment::FieldName;
+#[doc(hidden)]
+pub use path_segment::Field;
+#[doc(hidden)]
 pub use path_segment::Index;
+#[doc(hidden)]
 pub use path_segment::PathSegment;
-pub use ser::SerializeCursor;
+#[doc(hidden)]
+pub use ser::SerializePath;
+/// Access nested fields of values easily.
+///
+/// ```toml
+/// # Cargo.toml
+/// [workspace.package]
+/// version = "0.1"
+/// ```
+///
+/// To access nested fields, use dotted field syntax:
+///
+/// ```
+/// # mod fs { pub fn read_to_string(_: &str) -> Result<String, Box<dyn std::error::Error>> { Ok(String::from("workspace = { package = { version = '0.1' } }")) } }
+/// use serde_cursor::Cursor;
+///
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// let data = fs::read_to_string("Cargo.toml")?;
+///
+/// let version: String = toml::from_str::<Cursor!(workspace.package.version)>(&data)?.0;
+/// assert_eq!(version, "0.1");
+/// # Ok(()) }
+/// ```
+///
+/// You can access elements of arrays:
+///
+/// ```toml
+/// # Cargo.toml
+/// [workspace.package]
+/// version = "0.1"
+/// ```
+///
+/// See the [crate-level](crate) documentation for more.
 #[doc(inline)]
 pub use serde_cursor_impl::Cursor;
 #[doc(inline)]
-pub use serde_cursor_impl::CursorPath;
+pub use serde_cursor_impl::Path;
 
 /// Type returned by the [`Cursor!`] macro.
+#[doc(hidden)]
 pub struct Cursor<T, P>(pub T, #[doc(hidden)] pub PhantomData<P>);
 
 impl<T, P> From<T> for Cursor<T, P> {
@@ -515,6 +552,38 @@ impl<T: Ord, P> core::cmp::Ord for Cursor<T, P> {
     }
 }
 
+/// Available if you need to implement a trait for the type returned by `Cursor!`.
+///
+/// This module only exists in the documentation to group items that are an implementation
+/// details together. All of these items are actually exported from the crate root, but `#[doc(hidden)]`.
+// #[cfg(doc)]
+// #[doc(cfg(doc))]
+pub mod implementation_details {
+    #[doc(inline)]
+    pub use crate::const_str;
+    #[doc(inline)]
+    pub use crate::ConstPathSegment;
+    #[doc(inline)]
+    pub use crate::Cursor;
+    #[doc(inline)]
+    pub use crate::DeserializePath;
+    #[doc(inline)]
+    pub use crate::Field;
+    #[doc(inline)]
+    pub use crate::Index;
+    #[doc(inline)]
+    pub use crate::Path;
+    #[doc(inline)]
+    pub use crate::PathEnd;
+    #[doc(inline)]
+    pub use crate::Sequence;
+    #[doc(inline)]
+    pub use crate::SerializePath;
+    #[doc(inline)]
+    pub use crate::Wildcard;
+}
+
+#[doc(hidden)]
 pub mod const_str;
 
 // This only exists to make the generated macro output
@@ -532,13 +601,17 @@ pub use const_str::Char4Byte as C4;
 pub use const_str::StrLen;
 
 /// Represents the end of the cursor path.
-pub struct CursorPathEnd;
+#[doc(hidden)]
+pub struct PathEnd;
 
 /// Represents a single segment of a cursor path.
-pub struct CursorPath<S, P>(PhantomData<(S, P)>);
+#[doc(hidden)]
+pub struct Path<S, P>(PhantomData<(S, P)>);
 
 /// Represents the `*` in `Cursor!(package.*.name)`.
+#[doc(hidden)]
 pub struct Wildcard;
 
 mod sequence;
+#[doc(hidden)]
 pub use sequence::Sequence;
