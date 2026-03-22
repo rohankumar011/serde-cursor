@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 You can now use interpolations in cursor paths, to factor out repetitive queries:
 
 ```rust
-type Details<RestOfPath> = CursorPath!(properties.timeseries.*.data.instant.details + RestOfPath);
+type Details<RestOfPath> = serde_cursor::Path!(properties.timeseries.*.data.instant.details + RestOfPath);
 
 let pressure: Vec<f64> = toml::from_str::<Cursor!(france.$Details.air_pressure_at_sea_level)>(france)?.0;
 let humidity: Vec<f64> = toml::from_str::<Cursor!(japan.$Details.relative_humidity)>(japan)?.0;
