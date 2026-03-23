@@ -166,7 +166,139 @@
 //! # Ok(()) }
 //! ```
 //!
-//! ## Interpolations
+//! # `serde_cursor` + `monostate` = 🧡💛💚💙💜
+//!
+//! The [`monostate`](https://github.com/dtolnay/monostate) crate provides the `MustBe!` macro, which returns a type that implements
+//! [`serde::Deserialize`](serde_core::Deserialize), and can only ever deserialize from one specific value.
+//!
+//! Together, these 2 crates provide an almost jq-like experience of data processing in Rust:
+//!
+//! ```
+//! /*
+//! get!(reason: MustBe!("compiler-message"))?;
+//! get!(message.message: MustBe!("trace_macro"))?;
+//!
+//! Ok(Expansion {
+//!     messages: get!(message.children.*.message)?,
+//!     byte_start: get!(message.spans.0.byte_start)?,
+//!     byte_end: get!(message.spans.0.byte_end)?,
+//! })
+//! */
+//! ```
+//!
+//! The jq version of the above processing looks like this:
+//!
+//! ```jq
+//! select(.reason == "compiler-message")
+//! | select(.message.message == "trace_macro")
+//! | {
+//!     messages: [.message.children[].message],
+//!     byte_start: .message.spans[0].byte_start,
+//!     byte_end: .message.spans[0].byte_end
+//! }
+//! ```
+//!
+//! Considering we're comparing a strongly typed, low-level programming language with a duck-typed
+//! DSL specifically designed for extracting data from JSON, I'd say the result is Not Bad™!
+//!
+//! The full code for the above example looks like this:
+//!
+//! ```
+//! use monostate::MustBe;
+//! use serde_cursor::Cursor;
+//!
+//! struct Expansion {
+//!     messages: Vec<String>,
+//!     byte_start: u32,
+//!     byte_end: u32,
+//! }
+//!
+//! impl Expansion {
+//!     fn parse(value: &[u8]) -> serde_json::Result<Self> {
+//!         macro_rules! get {
+//!             ($($cursor:tt)*) => {
+//!                 serde_json::from_slice::<Cursor!($($cursor)*)>(value).map(|it| it.0)
+//!             };
+//!         }
+//!
+//!         get!(reason: MustBe!("compiler-message"))?;
+//!         get!(message.message: MustBe!("trace_macro"))?;
+//!
+//!         Ok(Expansion {
+//!             messages: get!(message.children.*.message)?,
+//!             byte_start: get!(message.spans.0.byte_start)?,
+//!             byte_end: get!(message.spans.0.byte_end)?,
+//!         })
+//!     }
+//! }
+//! ```
+//!
+//! <details>
+//!
+//! <summary>
+//!
+//! For reference, the same logic without `serde_cursor` or `monostate`
+//!
+//! </summary>
+//!
+//! ```
+//! use serde::Deserialize;
+//!
+//! struct Expansion {
+//!     messages: Vec<String>,
+//!     byte_start: u32,
+//!     byte_end: u32,
+//! }
+//!
+//! impl Expansion {
+//!     fn from_slice(value: &[u8]) -> serde_json::Result<Self> {
+//!         #[derive(Deserialize)]
+//!         struct RawDiagnostic {
+//!             reason: String,
+//!             message: DiagnosticMessage,
+//!         }
+//!
+//!         #[derive(Deserialize)]
+//!         struct DiagnosticMessage {
+//!             message: String,
+//!             children: Vec<DiagnosticChild>,
+//!             spans: Vec<DiagnosticSpan>,
+//!         }
+//!
+//!         #[derive(Deserialize)]
+//!         struct DiagnosticChild {
+//!             message: String,
+//!         }
+//!
+//!         #[derive(Deserialize)]
+//!         struct DiagnosticSpan {
+//!             byte_start: u32,
+//!             byte_end: u32,
+//!         }
+//!
+//!         let raw: RawDiagnostic = serde_json::from_slice(value)?;
+//!
+//!         if raw.reason != "compiler-message" || raw.message.message != "trace_macro" {
+//!             return Err(serde::de::Error::custom("..."));
+//!         }
+//!
+//!         let primary_span = raw.message.spans.get(0)
+//!             .ok_or_else(|| serde::de::Error::custom("..."))?;
+//!
+//!         Ok(Expansion {
+//!             messages: raw.message.children.into_iter().map(|c| c.message).collect(),
+//!             byte_start: primary_span.byte_start,
+//!             byte_end: primary_span.byte_end,
+//!         })
+//!     }
+//! }
+//! ```
+//!
+//! </details>
+//!
+//!
+//!
+//! # Interpolations
 //!
 //! It's not uncommon for multiple queries to get quite repetitive:
 //!

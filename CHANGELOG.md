@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [Unreleased]: https://github.com/nik-rev/serde-cursor/compare/v0.3.0...HEAD
 
+- Documentation improvements
+
 ## [v0.3.0] - 2026-03-22
 
 [v0.3.0]: https://github.com/nik-rev/serde-cursor/compare/v0.2.1...v0.3.0

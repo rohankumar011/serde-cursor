@@ -44,9 +44,11 @@ categories = ["encoding", "development-tools", "development-tools::procedural-ma
 
 [dev-dependencies]
 evil = "0.2.2"
+monostate = "1.0"
 serde = { version = "1.0.228", features = ["derive"] }
 serde-query = "0.2.0"
 serde_json = "1.0.149"
+serde_with = "3.18"
 toml = "1.0"
 trybuild = "1.0.116"
 
