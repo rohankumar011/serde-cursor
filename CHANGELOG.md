@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Changing indexing syntax from `dependencies.4.name` to `dependencies[4].name`
+- Changed indexing syntax from `dependencies.4.name` to `dependencies[4].name`
 - Changed index-all syntax from `dependencies.*.name` to `dependencies[].name`
 - Increased MSRV from 1.78 to 1.85
 
