@@ -375,7 +375,7 @@ assert_eq!(err, r#".author.id: invalid type: string "not-a-number", expected i32
 
 ## `serde_with` integration
 
-If `feature = "serde_with"` is enabled, the type returned by `Cursor!` will implement [`serde_with::DeserializeAs`](https://docs.rs/serde_with/3.18.0/serde_with/de/trait.DeserializeAs.html) and [`serde_with::SerializeAs`](https://docs.rs/serde_with/3.18.0/serde_with/ser/trait.SerializeAs.html),
+If `feature = "serde_with"` is enabled, the type returned by `Cursor!` will implement [`serde_with::DeserializeAs`](https://docs.rs/serde_with/latest/serde_with/trait.DeserializeAs.html) and [`serde_with::SerializeAs`](https://docs.rs/serde_with/latest/serde_with/trait.SerializeAs.html),
 meaning you can use it with the `#[serde_as]` attribute:
 
 ```rust
