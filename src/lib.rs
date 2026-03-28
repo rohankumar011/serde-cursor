@@ -67,7 +67,7 @@
 //!
 //! ## Get names of all dependencies from `Cargo.lock`
 //!
-//! The index-all `.*` accesses every element in an array:
+//! The index-all `[]` accesses every element in an array:
 //!
 //! ```
 //! use serde_cursor::Cursor;
@@ -81,7 +81,7 @@
 //!     name = "rand"
 //! "#;
 //!
-//! let packages: Vec<String> = toml::from_str::<Cursor!(package.*.name)>(file)?.0;
+//! let packages: Vec<String> = toml::from_str::<Cursor!(package[].name)>(file)?.0;
 //!
 //! assert_eq!(packages, vec!["serde", "rand"]);
 //! # Ok(()) }
@@ -89,7 +89,7 @@
 //!
 //! # Syntax
 //!
-//! Specify the type `Vec<String>` after the path `package.*.name`:
+//! Specify the type `Vec<String>` after the path `package[].name`:
 //!
 //! ```
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -101,7 +101,7 @@
 //! #     name = "rand"
 //! # "#;
 //! # use serde_cursor::Cursor;
-//! let packages = toml::from_str::<Cursor!(package.*.name: Vec<String>)>(file)?.0;
+//! let packages = toml::from_str::<Cursor!(package[].name: Vec<String>)>(file)?.0;
 //! # Ok(()) }
 //! ```
 //!
@@ -117,7 +117,7 @@
 //! #     name = "rand"
 //! # "#;
 //! # use serde_cursor::Cursor;
-//! let packages: Vec<String> = toml::from_str::<Cursor!(package.*.name)>(file)?.0;
+//! let packages: Vec<String> = toml::from_str::<Cursor!(package[].name)>(file)?.0;
 //! # Ok(()) }
 //! ```
 //!
@@ -179,9 +179,9 @@
 //! get!(message.message: MustBe!("trace_macro"))?;
 //!
 //! Ok(Expansion {
-//!     messages: get!(message.children.*.message)?,
-//!     byte_start: get!(message.spans.0.byte_start)?,
-//!     byte_end: get!(message.spans.0.byte_end)?,
+//!     messages: get!(message.children[].message)?,
+//!     byte_start: get!(message.spans[0].byte_start)?,
+//!     byte_end: get!(message.spans[0].byte_end)?,
 //! })
 //! # */
 //! ```
@@ -225,9 +225,9 @@
 //!         get!(message.message: MustBe!("trace_macro"))?;
 //!
 //!         Ok(Expansion {
-//!             messages: get!(message.children.*.message)?,
-//!             byte_start: get!(message.spans.0.byte_start)?,
-//!             byte_end: get!(message.spans.0.byte_end)?,
+//!             messages: get!(message.children[].message)?,
+//!             byte_start: get!(message.spans[0].byte_start)?,
+//!             byte_end: get!(message.spans[0].byte_end)?,
 //!         })
 //!     }
 //! }
@@ -296,7 +296,18 @@
 //!
 //! </details>
 //!
+//! # Ranges
 //!
+//! Ranges are like `[]` but for only for elements with an index that falls in the range:
+//!
+//! ```
+//! # /*
+//! Cursor!(package[4..]);
+//! Cursor!(package[..8]);
+//! Cursor!(package[4..8]);
+//! Cursor!(package[4..=8]);
+//! # */
+//! ```
 //!
 //! # Interpolations
 //!
@@ -308,9 +319,9 @@
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! # let france = "france = { properties = { timeseries = [{ data = { instant = { details = { air_pressure_at_sea_level = 1.0, relative_humidity = 2.0, air_temperature = 3.0 } } } }] } }";
 //! # let japan = "japan = { properties = { timeseries = [{ data = { instant = { details = { air_pressure_at_sea_level = 4.0, relative_humidity = 5.0, air_temperature = 6.0 } } } }] } }";
-//! let pressure: Vec<f64> = toml::from_str::<Cursor!(france.properties.timeseries.*.data.instant.details.air_pressure_at_sea_level)>(france)?.0;
-//! let humidity: Vec<f64> = toml::from_str::<Cursor!(japan.properties.timeseries.*.data.instant.details.relative_humidity)>(japan)?.0;
-//! let temperature: Vec<f64> = toml::from_str::<Cursor!(japan.properties.timeseries.*.data.instant.details.air_temperature)>(japan)?.0;
+//! let pressure: Vec<f64> = toml::from_str::<Cursor!(france.properties.timeseries[].data.instant.details.air_pressure_at_sea_level)>(france)?.0;
+//! let humidity: Vec<f64> = toml::from_str::<Cursor!(japan.properties.timeseries[].data.instant.details.relative_humidity)>(japan)?.0;
+//! let temperature: Vec<f64> = toml::from_str::<Cursor!(japan.properties.timeseries[].data.instant.details.air_temperature)>(japan)?.0;
 //! # Ok(()) }
 //! ```
 //!
@@ -322,7 +333,7 @@
 //! # let france = "france = { properties = { timeseries = [{ data = { instant = { details = { air_pressure_at_sea_level = 1.0, relative_humidity = 2.0, air_temperature = 3.0 } } } }] } }";
 //! # let japan = "japan = { properties = { timeseries = [{ data = { instant = { details = { air_pressure_at_sea_level = 4.0, relative_humidity = 5.0, air_temperature = 6.0 } } } }] } }";
 //! # use serde_cursor::Cursor;
-//! type Details<RestOfPath> = serde_cursor::Path!(properties.timeseries.*.data.instant.details + RestOfPath);
+//! type Details<RestOfPath> = serde_cursor::Path!(properties.timeseries[].data.instant.details + RestOfPath);
 //!
 //! let pressure: Vec<f64> = toml::from_str::<Cursor!(france.$Details.air_pressure_at_sea_level)>(france)?.0;
 //! let humidity: Vec<f64> = toml::from_str::<Cursor!(japan.$Details.relative_humidity)>(japan)?.0;
@@ -344,7 +355,7 @@
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! let data = r#"{ "commits": [{"author": "Ferris"}] }"#;
 //!
-//! let authors: Vec<String> = serde_json::from_str::<Cursor!(commits.*.author)>(data)?.0;
+//! let authors: Vec<String> = serde_json::from_str::<Cursor!(commits[].author)>(data)?.0;
 //! # Ok(()) }
 //! ```
 //!
@@ -378,7 +389,7 @@
 //! #[derive(Deserialize)]
 //! struct Data {
 //!     #[serde(rename = "commits")]
-//!     authors: Cursor!(*.author: Vec<String>),
+//!     authors: Cursor!([].author: Vec<String>),
 //!     count: usize,
 //! }
 //!
@@ -481,11 +492,11 @@
 //!     Path<
 //!         Field<"package">, // .package
 //!         Path<
-//!             IndexAll, // .*
+//!             IndexAll, // []
 //!             Path<
 //!                 Field<"dependencies">, // .dependencies
 //!                 Path<
-//!                     Index<0>, // .0
+//!                     Index<0>, // [0]
 //!                     PathEnd
 //!                 >,
 //!             >,
@@ -501,9 +512,9 @@
 //! # /*
 //! vec![
 //!     Segment::Field("package"), // .package
-//!     Segment::IndexAll, // .*
+//!     Segment::IndexAll, // []
 //!     Segment::Field("dependencies"), // .dependencies
-//!     Segment::Index(0) // .0
+//!     Segment::Index(0) // [0]
 //! ]
 //! # */
 //! ```
@@ -511,7 +522,7 @@
 //! Except it exists entirely in the type system.
 //!
 //! Each time the [`serde::Deserialize::deserialize()`](https://docs.rs/serde/latest/serde/trait.Deserialize.html#tymethod.deserialize) function is called,
-//! the first segment of the path (`.package`) is processed, and the rest of the path (`.*.dependencies.0`) is passed to the
+//! the first segment of the path (`.package`) is processed, and the rest of the path (`[].dependencies[0]`) is passed to the
 //! [`serde::Deserialize`](serde_core::Deserialize) trait, again, and again - until the path is empty.
 //!
 //! Once the path is empty, we finally get to the type of the field - the `String` in the above example,
@@ -648,12 +659,6 @@ mod cursor {
 #[doc(cfg(doc))]
 pub mod implementation_details {
     #[doc(inline)]
-    pub use crate::const_str;
-    #[doc(inline)]
-    pub use crate::cursor::Cursor;
-    #[doc(inline)]
-    pub use crate::path::Path;
-    #[doc(inline)]
     pub use crate::ConstPathSegment;
     #[doc(inline)]
     pub use crate::DeserializePath;
@@ -677,6 +682,12 @@ pub mod implementation_details {
     pub use crate::Sequence;
     #[doc(inline)]
     pub use crate::SerializePath;
+    #[doc(inline)]
+    pub use crate::const_str;
+    #[doc(inline)]
+    pub use crate::cursor::Cursor;
+    #[doc(inline)]
+    pub use crate::path::Path;
 }
 
 #[doc(hidden)]

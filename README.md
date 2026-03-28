@@ -18,7 +18,7 @@ cargo-reedme: info-end -->
 [![crates.io](https://img.shields.io/crates/v/serde_cursor?style=flat-square&logo=rust)](https://crates.io/crates/serde_cursor)
 [![docs.rs](https://img.shields.io/docsrs/serde_cursor?style=flat-square&logo=docs.rs)](https://docs.rs/serde_cursor)
 ![license](https://img.shields.io/badge/license-Apache--2.0_OR_MIT-blue?style=flat-square)
-![msrv](https://img.shields.io/badge/msrv-1.78-blue?style=flat-square&logo=rust)
+![msrv](https://img.shields.io/badge/msrv-1.85-blue?style=flat-square&logo=rust)
 [![github](https://img.shields.io/github/stars/nik-rev/serde-cursor)](https://github.com/nik-rev/serde-cursor)
 
 This crate allows you to declaratively specify how to fetch the desired parts of a serde-compatible data format (such as JSON)
@@ -80,7 +80,7 @@ let version = toml::from_str::<CargoToml>(data)?.workspace.package.version;
 
 ### Get names of all dependencies from `Cargo.lock`
 
-The index-all `.*` accesses every element in an array:
+The index-all `[]` accesses every element in an array:
 
 ```rust
 use serde_cursor::Cursor;
@@ -93,23 +93,23 @@ let file = r#"
     name = "rand"
 "#;
 
-let packages: Vec<String> = toml::from_str::<Cursor!(package.*.name)>(file)?.0;
+let packages: Vec<String> = toml::from_str::<Cursor!(package[].name)>(file)?.0;
 
 assert_eq!(packages, vec!["serde", "rand"]);
 ```
 
 ## Syntax
 
-Specify the type `Vec<String>` after the path `package.*.name`:
+Specify the type `Vec<String>` after the path `package[].name`:
 
 ```rust
-let packages = toml::from_str::<Cursor!(package.*.name: Vec<String>)>(file)?.0;
+let packages = toml::from_str::<Cursor!(package[].name: Vec<String>)>(file)?.0;
 ```
 
 The type can be omitted, in which case it will be inferred:
 
 ```rust
-let packages: Vec<String> = toml::from_str::<Cursor!(package.*.name)>(file)?.0;
+let packages: Vec<String> = toml::from_str::<Cursor!(package[].name)>(file)?.0;
 ```
 
 Fields that consist of identifiers and `-`s can be used without quotes:
@@ -142,9 +142,9 @@ get!(reason: MustBe!("compiler-message"))?;
 get!(message.message: MustBe!("trace_macro"))?;
 
 Ok(Expansion {
-    messages: get!(message.children.*.message)?,
-    byte_start: get!(message.spans.0.byte_start)?,
-    byte_end: get!(message.spans.0.byte_end)?,
+    messages: get!(message.children[].message)?,
+    byte_start: get!(message.spans[0].byte_start)?,
+    byte_end: get!(message.spans[0].byte_end)?,
 })
 ```
 
@@ -179,7 +179,7 @@ impl Expansion {
     fn parse(value: &[u8]) -> serde_json::Result<Self> {
         macro_rules! get {
             ($($cursor:tt)*) => {
-                serde_json::from_slice::<Cursor!($($cursor)*)>(value).map(|it| it[0])
+                serde_json::from_slice::<Cursor!($($cursor)*)>(value).map(|it| it.0)
             };
         }
 
@@ -187,9 +187,9 @@ impl Expansion {
         get!(message.message: MustBe!("trace_macro"))?;
 
         Ok(Expansion {
-            messages: get!(message.children.*.message)?,
-            byte_start: get!(message.spans.0.byte_start)?,
-            byte_end: get!(message.spans.0.byte_end)?,
+            messages: get!(message.children[].message)?,
+            byte_start: get!(message.spans[0].byte_start)?,
+            byte_end: get!(message.spans[0].byte_end)?,
         })
     }
 }
@@ -258,22 +258,31 @@ impl Expansion {
 
 </details>
 
+## Ranges
 
+Ranges are like `[]` but for only for elements with an index that falls in the range:
+
+```rust
+Cursor!(package[4..]);
+Cursor!(package[..8]);
+Cursor!(package[4..8]);
+Cursor!(package[4..=8]);
+```
 
 ## Interpolations
 
 It’s not uncommon for multiple queries to get quite repetitive:
 
 ```rust
-let pressure: Vec<f64> = toml::from_str::<Cursor!(france.properties.timeseries.*.data.instant.details.air_pressure_at_sea_level)>(france)?.0;
-let humidity: Vec<f64> = toml::from_str::<Cursor!(japan.properties.timeseries.*.data.instant.details.relative_humidity)>(japan)?.0;
-let temperature: Vec<f64> = toml::from_str::<Cursor!(japan.properties.timeseries.*.data.instant.details.air_temperature)>(japan)?.0;
+let pressure: Vec<f64> = toml::from_str::<Cursor!(france.properties.timeseries[].data.instant.details.air_pressure_at_sea_level)>(france)?.0;
+let humidity: Vec<f64> = toml::from_str::<Cursor!(japan.properties.timeseries[].data.instant.details.relative_humidity)>(japan)?.0;
+let temperature: Vec<f64> = toml::from_str::<Cursor!(japan.properties.timeseries[].data.instant.details.air_temperature)>(japan)?.0;
 ```
 
 `serde_cursor` supports **interpolations**. You can factor out a common path into a type `Details`, and then interpolate it with `$Details` in the path inside `Cursor!`:
 
 ```rust
-type Details<RestOfPath> = serde_cursor::Path!(properties.timeseries.*.data.instant.details + RestOfPath);
+type Details<RestOfPath> = serde_cursor::Path!(properties.timeseries[].data.instant.details + RestOfPath);
 
 let pressure: Vec<f64> = toml::from_str::<Cursor!(france.$Details.air_pressure_at_sea_level)>(france)?.0;
 let humidity: Vec<f64> = toml::from_str::<Cursor!(japan.$Details.relative_humidity)>(japan)?.0;
@@ -293,7 +302,7 @@ use serde_cursor::Cursor;
 
 let data = r#"{ "commits": [{"author": "Ferris"}] }"#;
 
-let authors: Vec<String> = serde_json::from_str::<Cursor!(commits.*.author)>(data)?.0;
+let authors: Vec<String> = serde_json::from_str::<Cursor!(commits[].author)>(data)?.0;
 ```
 
 `serde_query`:
@@ -324,7 +333,7 @@ use serde_cursor::Cursor;
 #[derive(Deserialize)]
 struct Data {
     #[serde(rename = "commits")]
-    authors: Cursor!(*.author: Vec<String>),
+    authors: Cursor!([].author: Vec<String>),
     count: usize,
 }
 
@@ -417,11 +426,11 @@ Cursor<
     Path<
         Field<"package">, // .package
         Path<
-            IndexAll, // .*
+            IndexAll, // []
             Path<
                 Field<"dependencies">, // .dependencies
                 Path<
-                    Index<0>, // .0
+                    Index<0>, // [0]
                     PathEnd
                 >,
             >,
@@ -435,16 +444,16 @@ The above is essentially an equivalent to:
 ```rust
 vec![
     Segment::Field("package"), // .package
-    Segment::IndexAll, // .*
+    Segment::IndexAll, // []
     Segment::Field("dependencies"), // .dependencies
-    Segment::Index(0) // .0
+    Segment::Index(0) // [0]
 ]
 ```
 
 Except it exists entirely in the type system.
 
 Each time the [`serde::Deserialize::deserialize()`](https://docs.rs/serde/latest/serde/trait.Deserialize.html#tymethod.deserialize) function is called,
-the first segment of the path (`.package`) is processed, and the rest of the path (`.*.dependencies.0`) is passed to the
+the first segment of the path (`.package`) is processed, and the rest of the path (`[].dependencies[0]`) is passed to the
 [`serde::Deserialize`](https://docs.rs/serde_core/1.0.228/serde_core/de/trait.Deserialize.html) trait, again, and again - until the path is empty.
 
 Once the path is empty, we finally get to the type of the field - the `String` in the above example,
