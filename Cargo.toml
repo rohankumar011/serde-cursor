@@ -29,7 +29,7 @@ resolver = "2"
 members = [".", "proc_macro"]
 
 [workspace.package]
-version = "0.3.1"
+version = "0.4.0"
 authors = ["Nik Revenco <pm@nikrev.com>"]
 edition = "2024"
 rust-version = "1.85"
@@ -46,7 +46,7 @@ categories = [
 ]
 
 [dependencies]
-serde_cursor_impl = { path = "proc_macro", version = "0.3.1" }
+serde_cursor_impl = { path = "proc_macro", version = "0.4.0" }
 
 serde_core = { version = "1.0.228", default-features = false }
 

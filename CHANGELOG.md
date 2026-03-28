@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-[Unreleased]: https://github.com/nik-rev/serde-cursor/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/nik-rev/serde-cursor/compare/v0.4.0...HEAD
+
+## [v0.4.0] - 2026-03-28
+
+[v0.4.0]: https://github.com/nik-rev/serde-cursor/compare/v0.3.1...v0.4.0
 
 ### Changed
 
