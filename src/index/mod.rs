@@ -1,18 +1,18 @@
 use core::fmt;
 use core::marker::PhantomData;
 
+use serde_core::Deserialize;
+use serde_core::Serializer;
 use serde_core::de::IgnoredAny;
 use serde_core::de::SeqAccess;
 use serde_core::de::Visitor;
 use serde_core::ser::SerializeSeq as _;
-use serde_core::Deserialize;
-use serde_core::Serializer;
 
-use crate::de::PathSeed;
-use crate::ser::DelegateSerializeToSerealizePath;
 use crate::DeserializePath;
 use crate::Sequence;
 use crate::SerializePath;
+use crate::de::PathSeed;
+use crate::ser::DelegateSerializeToSerealizePath;
 
 pub(crate) mod range;
 pub(crate) mod range_from;
@@ -151,12 +151,12 @@ where
                         "[{index}]: expected at least {} elements, but found {}",
                         start + 1,
                         index + 1
-                    )))
+                    )));
                 }
                 Err(err) => {
                     return Err(serde_core::de::Error::custom(format_args!(
                         "[{index}]{err}"
-                    )))
+                    )));
                 }
             }
         }
@@ -200,12 +200,12 @@ where
                         "[{index}]: expected at least {} elements, but found {}",
                         start + 1,
                         index + 1
-                    )))
+                    )));
                 }
                 Err(err) => {
                     return Err(serde_core::de::Error::custom(format_args!(
                         "[{index}]{err}"
-                    )))
+                    )));
                 }
             }
         }

@@ -4,13 +4,13 @@ use serde_core::Deserialize;
 use serde_core::Deserializer;
 use serde_core::Serializer;
 
-use crate::index::RangeEndExclusive;
-use crate::index::RangeStartInclusive;
-use crate::index::RangeVisitor;
 use crate::DeserializePath;
 use crate::Path;
 use crate::Sequence;
 use crate::SerializePath;
+use crate::index::RangeEndExclusive;
+use crate::index::RangeStartInclusive;
+use crate::index::RangeVisitor;
 
 /// Access a range of elements in a sequence.
 /// Represents the `[4..7]` in `Cursor!(package[4..7].dependencies[0])`.

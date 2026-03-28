@@ -2,12 +2,12 @@
 
 use std::iter::Peekable;
 
-use proc_macro::token_stream;
 use proc_macro::Ident;
 use proc_macro::Punct;
 use proc_macro::Spacing;
 use proc_macro::Span;
 use proc_macro::TokenTree;
+use proc_macro::token_stream;
 
 use crate::CompileError;
 

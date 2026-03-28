@@ -148,10 +148,9 @@ fn nested_index_all() {
         ]
     });
 
-    let expected = vec![
-        vec!["A".to_string(), "B".to_string()],
-        vec!["C".to_string()],
-    ];
+    let expected = vec![vec!["A".to_string(), "B".to_string()], vec![
+        "C".to_string(),
+    ]];
 
     assert_roundtrip::<Vec<Vec<String>>, Cursor!(groups[].members[].name)>(json, expected);
 }

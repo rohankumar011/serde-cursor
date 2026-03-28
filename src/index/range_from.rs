@@ -4,13 +4,13 @@ use serde_core::Deserialize;
 use serde_core::Deserializer;
 use serde_core::Serializer;
 
-use crate::index::RangeEndUnbounded;
-use crate::index::RangeStartInclusive;
-use crate::index::RangeVisitor;
 use crate::DeserializePath;
 use crate::Path;
 use crate::Sequence;
 use crate::SerializePath;
+use crate::index::RangeEndUnbounded;
+use crate::index::RangeStartInclusive;
+use crate::index::RangeVisitor;
 
 /// Access all elements in a sequence starting from the given index.
 /// Represents the `[1..]` in `Cursor!(package[1..].dependencies[0])`.

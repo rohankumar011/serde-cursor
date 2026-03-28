@@ -5,12 +5,12 @@ use serde_core::Deserializer;
 use serde_core::Serializer;
 
 use super::RangeVisitor;
-use crate::index::RangeEndInclusive;
-use crate::index::RangeStartInclusive;
 use crate::DeserializePath;
 use crate::Path;
 use crate::Sequence;
 use crate::SerializePath;
+use crate::index::RangeEndInclusive;
+use crate::index::RangeStartInclusive;
 
 /// Access an inclusive range of elements in a sequence.
 /// Represents the `[4..=7]` in `Cursor!(package[4..=7].dependencies[0])`.

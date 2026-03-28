@@ -1,13 +1,13 @@
 use core::fmt;
 use core::marker::PhantomData;
 
+use serde_core::Deserialize;
+use serde_core::Deserializer;
 use serde_core::de::DeserializeSeed;
 use serde_core::de::IgnoredAny;
 use serde_core::de::MapAccess;
 use serde_core::de::SeqAccess;
 use serde_core::de::Visitor;
-use serde_core::Deserialize;
-use serde_core::Deserializer;
 
 use crate::ConstPathSegment;
 use crate::Cursor;

@@ -1,19 +1,19 @@
 use core::fmt;
 use core::marker::PhantomData;
 
-use serde_core::de::SeqAccess;
-use serde_core::de::Visitor;
-use serde_core::ser::SerializeSeq as _;
 use serde_core::Deserialize;
 use serde_core::Deserializer;
 use serde_core::Serializer;
+use serde_core::de::SeqAccess;
+use serde_core::de::Visitor;
+use serde_core::ser::SerializeSeq as _;
 
-use crate::de::PathSeed;
-use crate::ser::DelegateSerializeToSerealizePath;
 use crate::DeserializePath;
 use crate::Path;
 use crate::Sequence;
 use crate::SerializePath;
+use crate::de::PathSeed;
+use crate::ser::DelegateSerializeToSerealizePath;
 
 /// Access all elements of a sequence.
 /// Represents the `[]` in `Cursor!(package[].dependencies[0])`.
