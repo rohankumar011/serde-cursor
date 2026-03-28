@@ -199,9 +199,6 @@
 //! }
 //! ```
 //!
-//! Considering we're comparing a strongly typed, low-level programming language with a duck-typed
-//! DSL specifically designed for extracting data from JSON, I'd say the result is Not Bad™!
-//!
 //! The full code for the above example looks like this:
 //!
 //! ```
