@@ -14,9 +14,6 @@ tag = false
 [lib]
 proc-macro = true
 
-[features]
-negative_indexing = []
-
 [dependencies]
 litrs = "1.0.0"
 

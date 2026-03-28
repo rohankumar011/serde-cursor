@@ -4,8 +4,8 @@
 //
 // ref: https://github.com/dtolnay/monostate/blob/efb63b7ab6bfe73e7ccf20f71d17d3705cff9fcc/src/string.rs
 
-use std::marker::PhantomData;
-use std::mem::ManuallyDrop;
+use core::marker::PhantomData;
+use core::mem::ManuallyDrop;
 
 /// Allows effectively using `const S: &'static str` type parameter on stable rust.
 ///
@@ -48,7 +48,7 @@ where
             };
         }
 
-        unsafe { std::str::from_utf8_unchecked(&StaticBuffer::<Str, LEN>::BYTES) }
+        unsafe { core::str::from_utf8_unchecked(&StaticBuffer::<Str, LEN>::BYTES) }
     };
 }
 

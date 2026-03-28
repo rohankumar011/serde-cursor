@@ -341,9 +341,6 @@ fn parse_path_segments(
 /// Cursor!(message[].children)
 /// Cursor!(message[1].children)
 /// ```
-///
-/// Those numbers can actually be arbitrary constant expressions,
-/// and negative indices are supported as well.
 fn parse_index(brackets: Span, index: TokenStream) -> Result<IndexPathSegment, CompileError> {
     if index.is_empty() {
         return Ok(IndexPathSegment::RangeFull);

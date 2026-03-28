@@ -1,5 +1,5 @@
 use core::fmt;
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 use serde_core::de::DeserializeSeed;
 use serde_core::de::IgnoredAny;
@@ -101,7 +101,6 @@ where
     where
         D: Deserializer<'de>,
     {
-        use serde_core::de::Error;
         let segment = <S as ConstPathSegment>::VALUE;
 
         // The path `P` corresponds to everything after "package"
@@ -135,8 +134,17 @@ where
             }
         };
 
+        #[cfg(not(feature = "alloc"))]
+        return result;
+
         // wrap the error with the current path segment
-        result.map_err(|e| {
+        #[cfg(feature = "alloc")]
+        return result.map_err(|e| {
+            use alloc::format;
+            use alloc::string::ToString as _;
+
+            use serde_core::de::Error;
+
             let err_str = e.to_string();
             let path_str = match segment {
                 PathSegment::Field(name) => format!(".{}", name),
@@ -145,7 +153,7 @@ where
 
             // if the error is a nested path (starts with . or [), just join them
             if err_str.starts_with('.') || err_str.starts_with('[') {
-                D::Error::custom(format!("{}{}", path_str, err_str))
+                D::Error::custom(format_args!("{}{}", path_str, err_str))
             }
             // if this is the "top" level of the path, ensure it starts with a dot
             else {
@@ -154,9 +162,9 @@ where
                 } else {
                     path_str
                 };
-                D::Error::custom(format!("{}: {}", prefix, err_str))
+                D::Error::custom(format_args!("{}: {}", prefix, err_str))
             }
-        })
+        });
     }
 }
 
@@ -202,8 +210,8 @@ where
         //
         //     "key": ?
         //            ^ deserializing the value is job of the `PathSeed`
-        while let Some(key) = map.next_key::<String>()? {
-            if key == self.target && result.is_none() {
+        while let Some(key) = map.next_key::<CowStr<'de>>()? {
+            if key.as_ref() == self.target && result.is_none() {
                 // The value is deserialized using the `DeserializeSeed` implementation
                 // for `PathSeed`, which delegates to `DeserializePath::deserialize`
                 result = Some(map.next_value_seed(PathSeed::<P, T>(PhantomData))?);
@@ -244,7 +252,7 @@ where
                 // If the Option<T> case failed, that means this is a regular type - like
                 // a String, for example. So the field was required, and we report an error.
                 result.map_err(|_| {
-                    <A::Error as serde_core::de::Error>::custom(format!(
+                    <A::Error as serde_core::de::Error>::custom(format_args!(
                         "missing field '{}'",
                         self.target
                     ))
@@ -293,7 +301,7 @@ where
         // ]
         for i in 0..self.target_index {
             if seq.next_element::<IgnoredAny>()?.is_none() {
-                return Err(serde_core::de::Error::custom(format!(
+                return Err(serde_core::de::Error::custom(format_args!(
                     "index {} out of bounds (length {})",
                     self.target_index, i
                 )));
@@ -305,7 +313,10 @@ where
         let result = seq
             .next_element_seed(PathSeed::<P, T>(PhantomData))?
             .ok_or_else(|| {
-                serde_core::de::Error::custom(format!("index {} out of bounds", self.target_index))
+                serde_core::de::Error::custom(format_args!(
+                    "index {} out of bounds",
+                    self.target_index
+                ))
             })?;
 
         // Exhaust the sequence. Some formats (like binary formats or strict JSON
@@ -345,5 +356,57 @@ where
         D: Deserializer<'de>,
     {
         <P as DeserializePath<'de, T>>::deserialize(deserializer)
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum CowStr<'a> {
+    Borrowed(&'a str),
+    #[cfg(feature = "alloc")]
+    Owned(alloc::string::String),
+}
+
+impl<'a> AsRef<str> for CowStr<'a> {
+    fn as_ref(&self) -> &str {
+        match self {
+            CowStr::Borrowed(s) => s,
+            #[cfg(feature = "alloc")]
+            CowStr::Owned(s) => s.as_str(),
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for CowStr<'de> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct CowStrVisitor;
+
+        impl<'de> serde_core::de::Visitor<'de> for CowStrVisitor {
+            type Value = CowStr<'de>;
+
+            fn expecting(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+                f.write_str("a string")
+            }
+
+            fn visit_borrowed_str<E>(self, v: &'de str) -> Result<Self::Value, E> {
+                Ok(CowStr::Borrowed(v))
+            }
+
+            #[cfg(feature = "alloc")]
+            fn visit_str<E: serde_core::de::Error>(self, v: &str) -> Result<Self::Value, E> {
+                Ok(CowStr::Owned(alloc::string::String::from(v)))
+            }
+
+            #[cfg(not(feature = "alloc"))]
+            fn visit_str<E: serde_core::de::Error>(self, _v: &str) -> Result<Self::Value, E> {
+                Err(E::custom(
+                    "owned strings require the 'alloc' feature of `serde_cursor`",
+                ))
+            }
+        }
+
+        deserializer.deserialize_str(CowStrVisitor)
     }
 }

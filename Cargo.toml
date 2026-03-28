@@ -19,8 +19,7 @@ serde_core = { version = "1.0.228", default-features = false }
 serde_with = { version = "3.18", optional = true }
 
 [features]
-default = ["std", "negative_indexing"]
-negative_indexing = ["alloc", "serde_cursor_impl/negative_indexing"]
+default = ["std"]
 alloc = ["serde_core/alloc", "serde_with?/alloc"]
 std = ["serde_core/std", "serde_with?/std", "alloc"]
 serde_with = ["dep:serde_with"]

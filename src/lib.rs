@@ -563,7 +563,7 @@ pub use serde_cursor_impl::Path;
 
 mod cursor {
     use core::fmt;
-    use std::marker::PhantomData;
+    use core::marker::PhantomData;
 
     /// Type returned by the [`Cursor!`](crate::Cursor!) macro.
     #[doc(hidden)]
@@ -575,7 +575,7 @@ mod cursor {
         }
     }
 
-    impl<T, P> std::ops::Deref for Cursor<T, P> {
+    impl<T, P> core::ops::Deref for Cursor<T, P> {
         type Target = T;
         fn deref(&self) -> &Self::Target {
             &self.0
@@ -583,7 +583,7 @@ mod cursor {
     }
 
     impl<T: fmt::Debug, P> fmt::Debug for Cursor<T, P> {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             f.debug_tuple("Cursor").field(&self.0).finish()
         }
     }
@@ -603,13 +603,13 @@ mod cursor {
     }
 
     impl<T: fmt::Display, P> fmt::Display for Cursor<T, P> {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
             <T as fmt::Display>::fmt(&self.0, f)
         }
     }
 
     impl<T: core::hash::Hash, P> core::hash::Hash for Cursor<T, P> {
-        fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
             self.0.hash(state);
             self.1.hash(state);
         }
@@ -624,13 +624,13 @@ mod cursor {
     }
 
     impl<T: PartialOrd, P> PartialOrd for Cursor<T, P> {
-        fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
             <T as PartialOrd>::partial_cmp(&self.0, &other.0)
         }
     }
 
     impl<T: Ord, P> core::cmp::Ord for Cursor<T, P> {
-        fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        fn cmp(&self, other: &Self) -> core::cmp::Ordering {
             <T as Ord>::cmp(&self.0, &other.0)
         }
     }
@@ -697,7 +697,7 @@ pub use const_str::Char4Byte as C4;
 pub use const_str::StrLen;
 
 mod path {
-    use std::marker::PhantomData;
+    use core::marker::PhantomData;
 
     /// Represents the end of the cursor path.
     #[doc(hidden)]

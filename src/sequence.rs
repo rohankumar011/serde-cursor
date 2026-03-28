@@ -1,8 +1,17 @@
-use std::collections::BTreeSet;
+#[cfg(feature = "alloc")]
+use alloc::collections::BTreeSet;
+#[cfg(feature = "alloc")]
+use alloc::collections::LinkedList;
+#[cfg(feature = "alloc")]
+use alloc::collections::VecDeque;
+#[cfg(feature = "alloc")]
+use alloc::string::String;
+#[cfg(feature = "alloc")]
+use alloc::vec::Vec;
+#[cfg(feature = "std")]
+use core::hash::Hash;
+#[cfg(feature = "std")]
 use std::collections::HashSet;
-use std::collections::LinkedList;
-use std::collections::VecDeque;
-use std::hash::Hash;
 
 /// Sequences of items, such as [`Vec<T>`] or [`HashSet<T>`].
 /// The index-all `.*` syntax requires this trait to be implemented.
@@ -49,6 +58,7 @@ pub trait Sequence: Default {
     }
 }
 
+#[cfg(feature = "alloc")]
 impl<T> Sequence for Vec<T> {
     type Item = T;
 
@@ -61,6 +71,7 @@ impl<T> Sequence for Vec<T> {
     }
 }
 
+#[cfg(feature = "alloc")]
 impl<T> Sequence for VecDeque<T> {
     type Item = T;
 
@@ -73,6 +84,7 @@ impl<T> Sequence for VecDeque<T> {
     }
 }
 
+#[cfg(feature = "alloc")]
 impl<T> Sequence for LinkedList<T> {
     type Item = T;
 
@@ -81,6 +93,7 @@ impl<T> Sequence for LinkedList<T> {
     }
 }
 
+#[cfg(feature = "std")]
 impl<T, H> Sequence for HashSet<T, H>
 where
     T: Eq + Hash,
@@ -97,6 +110,7 @@ where
     }
 }
 
+#[cfg(feature = "alloc")]
 impl<T> Sequence for BTreeSet<T>
 where
     T: Ord,
@@ -108,6 +122,7 @@ where
     }
 }
 
+#[cfg(feature = "alloc")]
 impl Sequence for String {
     type Item = char;
 

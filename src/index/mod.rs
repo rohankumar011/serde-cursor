@@ -1,5 +1,5 @@
 use core::fmt;
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 use serde_core::de::IgnoredAny;
 use serde_core::de::SeqAccess;
@@ -173,7 +173,7 @@ where
             // Deserialize every remaining item
             while let Some(element) = seq
                 .next_element_seed(PathSeed::<P, C::Item>(PhantomData))
-                .map_err(|e| serde_core::de::Error::custom(format!("[{}]{}", index, e)))?
+                .map_err(|e| serde_core::de::Error::custom(format_args!("[{}]{}", index, e)))?
             {
                 elements.push(element);
                 index += 1;
@@ -226,12 +226,12 @@ where
     I: Iterator<Item = &'a T> + ExactSizeIterator,
     T: 'a,
 {
-    let start = match dbg!(Start::VALUE) {
+    let start = match Start::VALUE {
         RangeStart::Inclusive(start) => start,
         RangeStart::Unbounded => 0,
     };
 
-    let end = match dbg!(End::VALUE) {
+    let end = match End::VALUE {
         RangeEnd::Inclusive(end) => end + 1,
         RangeEnd::Exclusive(end) => end,
         RangeEnd::Unbounded => elements.len() + 1,
@@ -264,7 +264,7 @@ where
     for element in elements.into_iter().take(len) {
         seq.serialize_element(&DelegateSerializeToSerealizePath::<P, T>(
             element,
-            std::marker::PhantomData,
+            core::marker::PhantomData,
         ))?;
     }
 

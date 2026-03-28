@@ -1,5 +1,5 @@
 use core::fmt;
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 use serde_core::de::SeqAccess;
 use serde_core::de::Visitor;

@@ -1,4 +1,4 @@
-#![expect(clippy::identity_op)]
+#![allow(clippy::identity_op)]
 
 use serde_cursor::Cursor;
 use serde_json::json;
@@ -35,6 +35,7 @@ fn deep_field_path() {
     assert_roundtrip::<i32, Cursor!(a.b.c)>(json, 100);
 }
 
+#[cfg(feature = "alloc")]
 macro_rules! test_range {
     ($range:tt, $expected:tt) => {{
         let json = json!([[0], [1], [2], [3], [4]]);
@@ -50,23 +51,27 @@ macro_rules! test_range {
 const X: usize = 1;
 
 #[test]
+#[cfg(feature = "alloc")]
 fn range() {
     test_range!([1..3], [1, 2]);
     test_range!([X..2 + X], [1, 2]);
 }
 
+#[cfg(feature = "alloc")]
 #[test]
 fn range_inclusive() {
     test_range!([1..=3], [1, 2, 3]);
     test_range!([X..=2 + X], [1, 2, 3]);
 }
 
+#[cfg(feature = "alloc")]
 #[test]
 fn range_to() {
     test_range!([..3], [0, 1, 2]);
     test_range!([..2 + X], [0, 1, 2]);
 }
 
+#[cfg(feature = "alloc")]
 #[test]
 fn range_to_inclusive() {
     test_range!([..=3], [0, 1, 2, 3]);
@@ -74,6 +79,7 @@ fn range_to_inclusive() {
 }
 
 #[test]
+#[cfg(feature = "alloc")]
 fn range_from() {
     test_range!([1..], [1, 2, 3, 4]);
     test_range!([0 + X..], [1, 2, 3, 4]);
@@ -109,6 +115,7 @@ fn with_dashes() {
     assert_roundtrip::<bool, Cursor!(--dev-dependencies.--yes)>(json, true);
 }
 
+#[cfg(feature = "alloc")]
 #[test]
 fn index_all_collection() {
     let json = json!([
@@ -131,6 +138,7 @@ fn mixed_nested_path() {
     assert_roundtrip::<String, Cursor!(users[1].meta.id)>(json, "uuid-1".to_string());
 }
 
+#[cfg(feature = "alloc")]
 #[test]
 fn nested_index_all() {
     let json = json!({
@@ -148,6 +156,7 @@ fn nested_index_all() {
     assert_roundtrip::<Vec<Vec<String>>, Cursor!(groups[].members[].name)>(json, expected);
 }
 
+#[cfg(feature = "alloc")]
 #[test]
 fn complex_index_all_objects() {
     let json = json!({
