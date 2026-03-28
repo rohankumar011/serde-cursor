@@ -12,7 +12,7 @@ use crate::DeserializePath;
 use crate::Sequence;
 use crate::SerializePath;
 use crate::de::PathSeed;
-use crate::ser::DelegateSerializeToSerealizePath;
+use crate::ser::DelegateSerializeToSerializePath;
 
 pub(crate) mod range;
 pub(crate) mod range_from;
@@ -262,7 +262,7 @@ where
     // [null, null, 2, 3, 4]
     //              ^^^^^^^
     for element in elements.into_iter().take(len) {
-        seq.serialize_element(&DelegateSerializeToSerealizePath::<P, T>(
+        seq.serialize_element(&DelegateSerializeToSerializePath::<P, T>(
             element,
             core::marker::PhantomData,
         ))?;

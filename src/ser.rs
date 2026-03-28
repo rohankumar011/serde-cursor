@@ -76,7 +76,7 @@ where
                 //    ^^^^^^^^^^^^^^^ serialize all of this
                 map.serialize_entry(
                     name,
-                    &DelegateSerializeToSerealizePath::<P, T>(value, PhantomData),
+                    &DelegateSerializeToSerializePath::<P, T>(value, PhantomData),
                 )?;
 
                 map.end()
@@ -99,7 +99,7 @@ where
                 }
 
                 // serialize the actual element at the target index.
-                seq.serialize_element(&DelegateSerializeToSerealizePath::<P, T>(
+                seq.serialize_element(&DelegateSerializeToSerializePath::<P, T>(
                     value,
                     PhantomData,
                 ))?;
@@ -110,12 +110,12 @@ where
     }
 }
 
-pub(crate) struct DelegateSerializeToSerealizePath<'a, P, T>(
+pub(crate) struct DelegateSerializeToSerializePath<'a, P, T>(
     pub(crate) &'a T,
     pub(crate) PhantomData<P>,
 );
 
-impl<'a, P, T> Serialize for DelegateSerializeToSerealizePath<'a, P, T>
+impl<'a, P, T> Serialize for DelegateSerializeToSerializePath<'a, P, T>
 where
     P: SerializePath<T>,
 {

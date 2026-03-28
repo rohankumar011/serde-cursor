@@ -13,7 +13,7 @@ use crate::Path;
 use crate::Sequence;
 use crate::SerializePath;
 use crate::de::PathSeed;
-use crate::ser::DelegateSerializeToSerealizePath;
+use crate::ser::DelegateSerializeToSerializePath;
 
 /// Access all elements of a sequence.
 /// Represents the `[]` in `Cursor!(package[].dependencies[0])`.
@@ -117,7 +117,7 @@ where
 
         for item in value {
             // every item in the collection is wrapped with the remaining path P.
-            seq.serialize_element(&DelegateSerializeToSerealizePath::<P, T>(item, PhantomData))?;
+            seq.serialize_element(&DelegateSerializeToSerializePath::<P, T>(item, PhantomData))?;
         }
 
         seq.end()
