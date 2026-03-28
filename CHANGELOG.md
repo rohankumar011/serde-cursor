@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [Unreleased]: https://github.com/nik-rev/serde-cursor/compare/v0.3.1...HEAD
 
+### Changed
+
+- Changing indexing syntax from `dependencies.4.name` to `dependencies[4].name`
+- Changed index-all syntax from `dependencies.*.name` to `dependencies[].name`
+- Increased MSRV from 1.78 to 1.85
+
+### Added
+
+- Indexing can now use an arbitrary constant expression, e.g. `Cursor!(package.dependencies[4 + N])`
+- Ranges, e.g. `Cursor!(package.dependencies[4..=8])`, with support for all standard Rust range syntax.
+
 ## [v0.3.1] - 2026-03-23
 
 [v0.3.1]: https://github.com/nik-rev/serde-cursor/compare/v0.3.0...v0.3.1
