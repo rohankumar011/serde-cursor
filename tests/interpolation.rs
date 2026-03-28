@@ -79,7 +79,7 @@ fn with_index_all() -> evil::Result {
     let france = json!({ "france": make_weather(1.0, 2.0, 3.0) });
     let japan = json!({ "japan": make_weather(4.0, 5.0, 6.0) });
 
-    type Details<T> = Path!(properties.timeseries.*.data.instant.details + T);
+    type Details<T> = Path!(properties.timeseries[].data.instant.details + T);
 
     let pressure: Vec<f64> =
         serde_json::from_value::<Cursor!(france.$Details.air_pressure_at_sea_level)>(france)?.0;

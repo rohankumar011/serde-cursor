@@ -11,11 +11,9 @@ use serde_core::Deserializer;
 
 use crate::ConstPathSegment;
 use crate::Cursor;
-use crate::IndexAll;
 use crate::Path;
 use crate::PathEnd;
 use crate::PathSegment;
-use crate::Sequence;
 
 impl<'de, T, P> Deserialize<'de> for Cursor<T, P>
 where
@@ -46,8 +44,8 @@ pub trait DeserializePath<'de, T> {
 
 // base case: we are at the target property
 //
-// Cursor!(package.4.name: String)
-//                   ^^^^ we are here
+// Cursor!(package[0].name: String)
+//                    ^^^^ we are here
 //
 // So we call: <String as Deserialize>::deserialize
 impl<'de, T: Deserialize<'de>> DeserializePath<'de, T> for PathEnd {
@@ -86,9 +84,9 @@ impl<'de, T: Deserialize<'de>> DeserializePath<'de, T> for PathEnd {
 // Path<
 //     Field<"package">,
 //
-//     Path<        |
+//     Path<              |
 //         Field<"name">, |
-//         PathEnd  |
+//         PathEnd        |
 //     >                  |
 //     ^^^^^^^^^^^^^^^^^^^^ all of this will be deserialized (a single recursive step)
 // >
@@ -125,11 +123,11 @@ where
 
             // The current segment is an index into a sequence.
             //
-            // Cursor!(packages.4.name: String)
+            // Cursor!(packages[4].name: String)
             //         ^^^^^^^^ we are here
             PathSegment::Index(index) => {
-                // Cursor!(packages.4.name: String)
-                //                 ^^^^^^^ deserialize all of this
+                // Cursor!(packages[4].name: String)
+                //                 ^^^^^^^^ deserialize all of this
                 deserializer.deserialize_seq(SequenceVisitor::<P, T> {
                     target_index: index,
                     _marker: PhantomData,
@@ -282,7 +280,7 @@ where
     where
         A: SeqAccess<'de>,
     {
-        // Cursor!(packages.4.name: String)
+        // Cursor!(packages[4].name: String)
         //          ^^^^^^^^ we are here, looking for index 4
 
         // Skip elements before the target index to avoid memory bloat.
@@ -318,79 +316,8 @@ where
     }
 }
 
-/// Visitor for the index-all (`.*`) path segment.
-///
-/// ```txt
-/// Cursor!(package.*.name: Vec<String>)
-///                 ^
-/// ```
-///
-/// Collects multiple items into a sequence `C` implementing [`Sequence`],
-///
-/// In this case every `name` field corresponds to `String`, all of the
-/// `name`s will be collected into a single `Vec<String>`.
-struct IndexAllVisitor<P, C> {
-    _marker: PhantomData<(P, C)>,
-}
-
-impl<'de, P, C> DeserializePath<'de, C> for Path<IndexAll, P>
-where
-    C: Sequence,
-    P: DeserializePath<'de, C::Item>,
-    C::Item: Deserialize<'de>,
-{
-    fn deserialize<D>(deserializer: D) -> Result<C, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        deserializer.deserialize_seq(IndexAllVisitor::<P, C> {
-            _marker: PhantomData,
-        })
-    }
-}
-
-impl<'de, P, C> Visitor<'de> for IndexAllVisitor<P, C>
-where
-    C: Sequence,
-    P: DeserializePath<'de, C::Item>,
-    C::Item: Deserialize<'de>,
-{
-    type Value = C;
-
-    fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str("a sequence")
-    }
-
-    fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-    where
-        A: SeqAccess<'de>,
-    {
-        let mut items = <C as Default>::default();
-        let mut index = 0;
-
-        // Instead of skipping, we visit EVERY element in the sequence.
-        //
-        // For every element, we apply the rest of the path `P`.
-        //
-        // Cursor!(packages.*.name: Vec<String>)
-        //          [
-        //            {"name": "serde"}, // Apply ".name" -> "serde"
-        //            {"name": "anyhow"} // Apply ".name" -> "anyhow"
-        //          ]
-        while let Some(item) = seq
-            .next_element_seed(PathSeed::<P, C::Item>(PhantomData))
-            .map_err(|e| serde_core::de::Error::custom(format!("[{}]{}", index, e)))?
-        {
-            items.push(item);
-            index += 1;
-        }
-
-        Ok(items)
-    }
-}
-
 /// A [`DeserializeSeed`] that allows us to pass our path-traversal state.
-struct PathSeed<P, T>(PhantomData<(P, T)>);
+pub(crate) struct PathSeed<P, T>(pub(crate) PhantomData<(P, T)>);
 
 impl<'de, P, T> DeserializeSeed<'de> for PathSeed<P, T>
 where

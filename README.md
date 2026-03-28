@@ -127,7 +127,7 @@ Cursor!(ferris."🦀::<>".r#"""#)
 You can access specific elements of an array:
 
 ```rust
-Cursor!(package.0.name)
+Cursor!(package[0].name)
 ```
 
 ## `serde_cursor` + `monostate` = 🧡💛💚💙💜
@@ -179,7 +179,7 @@ impl Expansion {
     fn parse(value: &[u8]) -> serde_json::Result<Self> {
         macro_rules! get {
             ($($cursor:tt)*) => {
-                serde_json::from_slice::<Cursor!($($cursor)*)>(value).map(|it| it.0)
+                serde_json::from_slice::<Cursor!($($cursor)*)>(value).map(|it| it[0])
             };
         }
 
@@ -394,7 +394,7 @@ Information on how to access the nested fields is stored entirely inside the typ
 Consider this query, which gets the first dependency of every dependency in `Cargo.toml`:
 
 ```rust
-Cursor!(package.*.dependencies.0: String)
+Cursor!(package[].dependencies[0]: String)
 ```
 
 For this `Cargo.lock`, it would extract `["libc", "find-msvc-tools"]`:

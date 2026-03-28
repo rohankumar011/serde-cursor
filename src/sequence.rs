@@ -40,37 +40,60 @@ use std::hash::Hash;
 /// - [`LinkedList<String>`]
 pub trait Sequence: Default {
     type Item;
+
     fn push(&mut self, item: Self::Item);
+
+    fn with_capacity(capacity: usize) -> Self {
+        let _ = capacity;
+        Self::default()
+    }
 }
 
 impl<T> Sequence for Vec<T> {
     type Item = T;
+
     fn push(&mut self, item: Self::Item) {
-        self.push(item);
+        Vec::push(self, item);
+    }
+
+    fn with_capacity(capacity: usize) -> Self {
+        Vec::with_capacity(capacity)
     }
 }
 
 impl<T> Sequence for VecDeque<T> {
     type Item = T;
+
     fn push(&mut self, item: Self::Item) {
         self.push_back(item);
+    }
+
+    fn with_capacity(capacity: usize) -> Self {
+        VecDeque::<T>::with_capacity(capacity)
     }
 }
 
 impl<T> Sequence for LinkedList<T> {
     type Item = T;
+
     fn push(&mut self, item: Self::Item) {
         self.push_back(item);
     }
 }
 
-impl<T> Sequence for HashSet<T>
+impl<T, H> Sequence for HashSet<T, H>
 where
     T: Eq + Hash,
+    H: Default + core::hash::BuildHasher,
 {
     type Item = T;
+
     fn push(&mut self, item: Self::Item) {
         self.insert(item);
+    }
+
+    fn with_capacity(capacity: usize) -> Self {
+        HashSet::with_capacity_and_hasher(capacity, H::default())
     }
 }
 
@@ -79,6 +102,7 @@ where
     T: Ord,
 {
     type Item = T;
+
     fn push(&mut self, item: Self::Item) {
         self.insert(item);
     }
@@ -86,13 +110,19 @@ where
 
 impl Sequence for String {
     type Item = char;
+
     fn push(&mut self, item: Self::Item) {
         self.push(item);
+    }
+
+    fn with_capacity(capacity: usize) -> Self {
+        String::with_capacity(capacity)
     }
 }
 
 impl<T> Sequence for Option<T> {
     type Item = T;
+
     fn push(&mut self, item: Self::Item) {
         *self = Some(item);
     }

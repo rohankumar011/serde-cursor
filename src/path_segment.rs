@@ -9,14 +9,14 @@ pub enum PathSegment {
     /// Path segment representing the field of a map.
     ///
     /// ```txt
-    /// Cursor!(field.0)
+    /// Cursor!(field[0])
     ///         ^^^^^
     /// ```
     Field(&'static str),
     /// Path segment representing an index into a sequence.
     ///
     /// ```txt
-    /// Cursor!(field.0)
+    /// Cursor!(field[0])
     ///               ^
     /// ```
     Index(usize),
@@ -28,10 +28,10 @@ pub trait ConstPathSegment {
 }
 
 /// Accessing a specific field of a map.
-/// Represents the `package` in `Cursor!(package.0)`.
+/// Represents the `package` in `Cursor!(package[0])`.
 ///
 /// ```txt
-/// Cursor!(field.0)
+/// Cursor!(field[0])
 ///         ^^^^^
 /// ```
 ///
@@ -60,18 +60,13 @@ pub trait ConstPathSegment {
 pub struct Field<S: ConstStr, const Z: bool>(PhantomData<S>);
 
 /// Access a specific element of a sequence.
-/// Represents the `0` in `Cursor!(package.*.dependencies.0)`.
+/// Represents the `0` in `Cursor!(package[].dependencies[0])`.
 ///
 /// ```txt
-/// Cursor!(field.0)
+/// Cursor!(field[0])
 ///               ^
 /// ```
 pub struct Index<const N: usize>;
-
-/// Access all elements of a sequence.
-/// Represents the `*` in `Cursor!(package.*.dependencies.0)`.
-#[doc(hidden)]
-pub struct IndexAll;
 
 impl<S: ConstStr> ConstPathSegment for Field<S, false> {
     const VALUE: PathSegment = PathSegment::Field(S::VALUE);

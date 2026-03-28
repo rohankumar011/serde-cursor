@@ -1,7 +1,8 @@
 //! This crate is an implementation detail of the [`serde_cursor`](https://docs.rs/serde_cursor/latest/serde_cursor) crate.
 
+use proc_macro::Delimiter;
+use proc_macro::Group;
 use proc_macro::Ident;
-use proc_macro::Literal;
 use proc_macro::Punct;
 use proc_macro::Spacing;
 use proc_macro::Span;
@@ -43,8 +44,8 @@ pub fn Cursor(input: TokenStream) -> TokenStream {
 
     // These tokens make up the actual Type.
     //
-    // Cursor!(a.0.c: HashMap<&str, &str>)
-    //         ^^^^^
+    // Cursor!(a[0].c: HashMap<&str, &str>)
+    //         ^^^^^^
     let cursor_path_segments = match parse_path_segments(&mut input, ':') {
         Ok(value) => value,
         Err(compile_error) => return compile_error,
@@ -52,7 +53,7 @@ pub fn Cursor(input: TokenStream) -> TokenStream {
 
     // These tokens make up the actual Type.
     //
-    // Cursor!(a.0.c: HashMap<&str, &str>)
+    // Cursor!(a[0].c: HashMap<&str, &str>)
     //                 ^^^^^^^^^^^^^^^^^^^
     let type_tokens: TokenStream = if input.peek().is_none() {
         TokenStream::from_iter([ident("_")])
@@ -83,6 +84,8 @@ pub fn Cursor(input: TokenStream) -> TokenStream {
     ts.extend([punct(',')]);
     ts.extend(cursor_path);
     ts.extend([punct('>')]);
+
+    // panic!("{ts}");
 
     ts
 }
@@ -167,6 +170,28 @@ fn build_path(cursor_path_segments: Vec<PathSegment>, end: TokenStream) -> Token
         .into_iter()
         .rev()
         .fold(end, |p, segment| {
+            enum GenericArgs {
+                One(TokenStream),
+                Two(TokenStream, TokenStream),
+            }
+
+            fn build_generic_type(name: &str, args: GenericArgs) -> TokenStream {
+                let mut ts = path([ident(name)]);
+                ts.extend([punct('<')]);
+                match args {
+                    GenericArgs::One(a) => {
+                        ts.extend([TokenTree::Group(Group::new(Delimiter::Brace, a))]);
+                    }
+                    GenericArgs::Two(a, b) => {
+                        ts.extend([TokenTree::Group(Group::new(Delimiter::Brace, a))]);
+                        ts.extend([punct(',')]);
+                        ts.extend([TokenTree::Group(Group::new(Delimiter::Brace, b))]);
+                    }
+                }
+                ts.extend([punct('>')]);
+                ts
+            }
+
             let segment = match segment {
                 PathSegment::Interpolated { path, dollar: _ } => {
                     // Interpolated<P>
@@ -188,16 +213,29 @@ fn build_path(cursor_path_segments: Vec<PathSegment>, end: TokenStream) -> Token
                     return ts;
                 }
                 PathSegment::Field { value, spans } => const_str::encode(&value, &spans),
-                PathSegment::Index { value: index, span } => {
-                    let mut ts = path([ident("Index")]);
-                    ts.extend([punct('<')]);
-                    let mut lit = Literal::u128_unsuffixed(index);
-                    lit.set_span(span);
-                    ts.extend(Some(TokenTree::Literal(lit)));
-                    ts.extend([punct('>')]);
-                    ts
+                PathSegment::Index(index_seg) => {
+                    match index_seg {
+                        IndexPathSegment::RangeFull => path([ident("RangeFull")]),
+                        IndexPathSegment::RangeFrom(start) => {
+                            build_generic_type("RangeFrom", GenericArgs::One(start))
+                        }
+                        IndexPathSegment::RangeTo(last) => {
+                            build_generic_type("RangeTo", GenericArgs::One(last))
+                        }
+                        IndexPathSegment::RangeToInclusive(last) => {
+                            build_generic_type("RangeToInclusive", GenericArgs::One(last))
+                        }
+                        IndexPathSegment::Index(index) => {
+                            build_generic_type("Index", GenericArgs::One(index))
+                        }
+                        IndexPathSegment::Range(start, last) => {
+                            build_generic_type("Range", GenericArgs::Two(start, last))
+                        }
+                        IndexPathSegment::RangeInclusive(start, last) => {
+                            build_generic_type("RangeInclusive", GenericArgs::Two(start, last))
+                        }
+                    }
                 }
-                PathSegment::IndexAll(_span) => path([ident("IndexAll")]),
             };
 
             let mut ts = path([ident("Path")]);
@@ -219,12 +257,24 @@ fn parse_path_segments(
     while let Some(tt) = input.peek() {
         // the "." is not required for the first path
         //
-        // Cursor!(a.0.c: bool)
+        // Cursor!(a[0].c: bool)
         //         ^
         if !started {
-            match parse_path_segment(input) {
-                Ok(seg) => cursor_path_segments.push(seg),
-                Err(e) => return Err(e.into()),
+            match tt {
+                TokenTree::Group(g) if g.delimiter() == Delimiter::Bracket => {
+                    let index = parse_index(g.span(), g.stream())?;
+
+                    cursor_path_segments.push(PathSegment::Index(index));
+
+                    // eat the `[]`
+                    input.next();
+                }
+                _ => {
+                    match parse_access_path_segment(input) {
+                        Ok(seg) => cursor_path_segments.push(seg),
+                        Err(e) => return Err(e.into()),
+                    }
+                }
             }
 
             started = true;
@@ -233,23 +283,35 @@ fn parse_path_segments(
         }
 
         match tt {
-            // Path ends at a colon
+            // Path ends at a colon, if `end_token` is `:`
             //
             // Cursor!(a.b.c: bool)
-            //               ^
+            //              ^
             TokenTree::Punct(p) if p.as_char() == end_token => {
                 input.next();
 
                 break;
             }
+            // An "indexing" path segment
+            //
+            // Cursor!(a[].c: bool)
+            //          ^^
+            TokenTree::Group(g) if g.delimiter() == Delimiter::Bracket => {
+                let index = parse_index(g.span(), g.stream())?;
+
+                cursor_path_segments.push(PathSegment::Index(index));
+
+                // eat the `[]`
+                input.next();
+            }
             // A single path segment
             //
-            // Cursor!(a.0.c: bool)
-            //          ^^
+            // Cursor!(a[0].c: bool)
+            //         ^
             TokenTree::Punct(p) if p.as_char() == '.' => {
                 input.next();
 
-                match parse_path_segment(input) {
+                match parse_access_path_segment(input) {
                     Ok(seg) => cursor_path_segments.push(seg),
                     Err(e) => return Err(e.into()),
                 }
@@ -258,6 +320,135 @@ fn parse_path_segments(
         }
     }
     Ok(cursor_path_segments)
+}
+
+/// Parse the `index` path segment.
+///
+/// Receives contents inside the `[...]`:
+///
+/// ```txt
+/// Cursor!(packages[].name)
+///                 ^^
+/// ```
+///
+/// Can parse the following syntax (all inside the brackets):
+///
+/// ```
+/// Cursor!(message[1..7].children)
+/// Cursor!(message[1..=7].children)
+/// Cursor!(message[..=7].children)
+/// Cursor!(message[1..].children)
+/// Cursor!(message[].children)
+/// Cursor!(message[1].children)
+/// ```
+///
+/// Those numbers can actually be arbitrary constant expressions,
+/// and negative indices are supported as well.
+fn parse_index(brackets: Span, index: TokenStream) -> Result<IndexPathSegment, CompileError> {
+    if index.is_empty() {
+        return Ok(IndexPathSegment::RangeFull);
+    }
+
+    // all of the range's tokens
+    let mut index = index.into_iter().peekable();
+
+    // (a + 4)..b
+    // ^^^^^^^ tokens before the `..`
+    let mut before_range = TokenStream::new();
+
+    while let Some(tt) = index.next() {
+        // Until we find the `..`, all tokens before then are the "from" part of the range
+        if !matches!(&tt, TokenTree::Punct(p) if p.as_char() == '.')
+            || !matches!(index.peek(), Some(TokenTree::Punct(p)) if p.as_char() == '.')
+        {
+            before_range.extend([tt]);
+            continue;
+        }
+
+        // a..
+        //   ^
+        index.next();
+
+        // a..
+        //    ^ what comes after?
+        match index.next() {
+            // a..=b
+            Some(TokenTree::Punct(p)) if p.as_char() == '=' => {
+                // (a + 4)..=b
+                //           ^ tokens after iter
+                let after_range = index.collect();
+
+                let range = if before_range.is_empty() {
+                    IndexPathSegment::RangeToInclusive(after_range)
+                } else {
+                    IndexPathSegment::RangeInclusive(before_range, after_range)
+                };
+
+                return Ok(range);
+            }
+            // a..4
+            Some(tt) => {
+                // (a + 4)..b
+                //          ^ tokens after iter
+                let after_range = TokenStream::from_iter([tt].into_iter().chain(index));
+
+                let range = if before_range.is_empty() {
+                    IndexPathSegment::RangeTo(after_range)
+                } else {
+                    IndexPathSegment::Range(before_range, after_range)
+                };
+
+                return Ok(range);
+            }
+            // a..
+            None => {
+                if before_range.is_empty() {
+                    // ..
+                    return Err(CompileError::new(
+                        brackets,
+                        "`field[..]` is not valid, use `field[]`",
+                    ));
+                } else {
+                    // a..
+                    return Ok(IndexPathSegment::RangeFrom(before_range));
+                }
+            }
+        }
+    }
+
+    // If we get here, that means we never had a "range" at all,
+    // this is just an index instead.
+    //
+    // foo[index]
+    let index = before_range;
+
+    Ok(IndexPathSegment::Index(index))
+}
+
+/// Represents a path segment that has something to do with indexing
+#[derive(Debug)]
+enum IndexPathSegment {
+    /// The range-full, `[]`.
+    ///
+    /// ```txt
+    /// Cursor!(packages[].name)
+    ///                 ^^
+    /// ```
+    ///
+    /// The `Span` is of the `[]` group.
+    RangeFull,
+    RangeFrom(TokenStream),
+    RangeInclusive(TokenStream, TokenStream),
+    Range(TokenStream, TokenStream),
+    RangeToInclusive(TokenStream),
+    RangeTo(TokenStream),
+    /// Index into a sequence.
+    ///
+    /// ```txt
+    /// Cursor!(packages.*.dependencies[0])
+    ///                                 ^
+    /// ```
+    Index(TokenStream),
 }
 
 /// Represents a single segment of a path.
@@ -271,27 +462,27 @@ enum PathSegment {
     /// ```
     ///
     /// The `Span` is of the `*` token.
-    IndexAll(Span),
+    Index(IndexPathSegment),
     /// An interpolated path segment
     ///
     /// ```txt
     /// type Deps<T> = serde_cursor::Path!(*.dependencies.$T);
     ///
-    /// Cursor!(package.$Deps.0)
+    /// Cursor!(package.$Deps[0])
     ///                 ^^^^^
     /// ```
     Interpolated {
         /// Path to the generic type itself.
         ///
         /// ```txt
-        /// Cursor!(package.$Deps.0)
+        /// Cursor!(package.$Deps[0])
         ///                 ^^^^^
         /// ```
         path: path::Path,
         /// Span of the dollar.
         ///
         /// ```txt
-        /// Cursor!(package.$Deps.0)
+        /// Cursor!(package.$Deps[0])
         ///                 ^
         /// ```
         #[allow(unused)]
@@ -329,21 +520,9 @@ enum PathSegment {
         /// (works for IDEs that support semantic highlighting)
         spans: Vec<Span>,
     },
-    /// Index into a sequence.
-    ///
-    /// ```txt
-    /// Cursor!(packages.*.dependencies.0)
-    ///                                 ^
-    /// ```
-    Index {
-        /// Integer value of the index, in the above case it is `0`.
-        value: u128,
-        /// Span of the integer literal.
-        span: Span,
-    },
 }
 
-fn parse_path_segment(
+fn parse_access_path_segment(
     input: &mut std::iter::Peekable<proc_macro::token_stream::IntoIter>,
 ) -> Result<PathSegment, CompileError> {
     let tt = input.peek().ok_or_else(|| {
@@ -396,25 +575,9 @@ fn parse_path_segment(
 
             Ok(PathSegment::Interpolated { path, dollar })
         }
-        TokenTree::Punct(p) if p.as_char() == '*' => {
-            let span = p.span();
-            let _ = input.next();
-            Ok(PathSegment::IndexAll(span))
-        }
         TokenTree::Literal(lit) => {
             let span = lit.span();
             match litrs::Literal::from(lit) {
-                // Integer index
-                //
-                // Cursor!(a.0.c: bool)
-                //           ^
-                litrs::Literal::Integer(index) => {
-                    let val = index
-                        .value::<u128>()
-                        .ok_or_else(|| CompileError::new(span, "invalid integer index"))?;
-                    input.next();
-                    Ok(PathSegment::Index { value: val, span })
-                }
                 // Integer index
                 //
                 // Cursor!(a."hello world".c: bool)
@@ -427,12 +590,7 @@ fn parse_path_segment(
                         spans: Vec::from([span]),
                     })
                 }
-                _ => {
-                    Err(CompileError::new(
-                        span,
-                        "expected identifier, '*', integer, or string",
-                    ))
-                }
+                _ => Err(CompileError::new(span, "unexpected token")),
             }
         }
         _ => Err(CompileError::new(tt.span(), "unexpected token")),

@@ -10,7 +10,7 @@ fn matrix_index_all() {
         ]
     });
 
-    type MatrixQuery = Cursor!(matrix.*.*.v: Vec<Vec<i32>>);
+    type MatrixQuery = Cursor!(matrix[][].v: Vec<Vec<i32>>);
 
     let cursor: MatrixQuery = serde_json::from_value(json.clone()).unwrap();
     assert_eq!(*cursor, vec![vec![1, 2], vec![3]]);
@@ -29,7 +29,7 @@ fn index_all_with_missing_fields() {
         {}
     ]);
 
-    let cursor: Vec<Option<i32>> = serde_json::from_value::<Cursor!(*.val)>(json.clone())
+    let cursor: Vec<Option<i32>> = serde_json::from_value::<Cursor!([].val)>(json.clone())
         .unwrap()
         .0;
     assert_eq!(*cursor, vec![Some(1), None, Some(2), None]);

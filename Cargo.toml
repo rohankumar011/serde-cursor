@@ -14,9 +14,16 @@ all-features = true
 [dependencies]
 serde_cursor_impl = { version = "0.3.1", path = "proc_macro" }
 
-serde_core = "1.0.228"
+serde_core = { version = "1.0.228", default-features = false }
 
 serde_with = { version = "3.18", optional = true }
+
+[features]
+default = ["std", "negative_indexing"]
+negative_indexing = ["alloc", "serde_cursor_impl/negative_indexing"]
+alloc = ["serde_core/alloc", "serde_with?/alloc"]
+std = ["serde_core/std", "serde_with?/std", "alloc"]
+serde_with = ["dep:serde_with"]
 
 [package.metadata.release]
 pre-release-hook = ["cargo", "+nightly", "reedme"]
@@ -51,9 +58,6 @@ serde_json = "1.0.149"
 serde_with = "3.18"
 toml = "1.0"
 trybuild = "1.0.116"
-
-[features]
-serde_with = ["dep:serde_with"]
 
 [workspace]
 resolver = "2"

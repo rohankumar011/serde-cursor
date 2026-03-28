@@ -7,7 +7,6 @@ use serde_core::ser::Serializer;
 
 use crate::ConstPathSegment;
 use crate::Cursor;
-use crate::IndexAll;
 use crate::Path;
 use crate::PathEnd;
 use crate::PathSegment;
@@ -75,7 +74,10 @@ where
                 //
                 // { "field": "value", ... }
                 //    ^^^^^^^^^^^^^^^ serialize all of this
-                map.serialize_entry(name, &ToCursorWrapper::<P, T>(value, PhantomData))?;
+                map.serialize_entry(
+                    name,
+                    &DelegateSerializeToSerealizePath::<P, T>(value, PhantomData),
+                )?;
 
                 map.end()
             }
@@ -97,7 +99,10 @@ where
                 }
 
                 // serialize the actual element at the target index.
-                seq.serialize_element(&ToCursorWrapper::<P, T>(value, PhantomData))?;
+                seq.serialize_element(&DelegateSerializeToSerealizePath::<P, T>(
+                    value,
+                    PhantomData,
+                ))?;
 
                 seq.end()
             }
@@ -105,39 +110,12 @@ where
     }
 }
 
-// now for the IndexAll step: Cursor!(packages.*.name: Vec<String>)
-//                                             ^ we are here
-//
-// If the value is ["a", "b"], this produces:
-//
-// [
-//   { "name": "a" },
-//   { "name": "b" }
-// ]
-impl<P, T, C> SerializePath<C> for Path<IndexAll, P>
-where
-    for<'a> &'a C: IntoIterator<Item = &'a T>,
-    P: SerializePath<T>,
-{
-    fn serialize<S>(value: &C, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut seq = serializer.serialize_seq(None)?;
+pub(crate) struct DelegateSerializeToSerealizePath<'a, P, T>(
+    pub(crate) &'a T,
+    pub(crate) PhantomData<P>,
+);
 
-        for item in value {
-            // every item in the collection is wrapped with the remaining path P.
-            seq.serialize_element(&ToCursorWrapper::<P, T>(item, PhantomData))?;
-        }
-
-        seq.end()
-    }
-}
-
-// helper to bridge the recursion
-struct ToCursorWrapper<'a, P, T>(&'a T, PhantomData<P>);
-
-impl<'a, P, T> Serialize for ToCursorWrapper<'a, P, T>
+impl<'a, P, T> Serialize for DelegateSerializeToSerealizePath<'a, P, T>
 where
     P: SerializePath<T>,
 {

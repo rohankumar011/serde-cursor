@@ -1,24 +1,29 @@
-#![allow(clippy::type_complexity)]
+#![expect(clippy::identity_op)]
 
 use serde_cursor::Cursor;
 use serde_json::json;
 
 /// `C` satisfies any type returned by `Cursor!` macro
 #[track_caller]
-fn assert_roundtrip<T, C>(input: serde_json::Value, expected_inner: T)
+fn assert_roundtrip<T, C>(json: serde_json::Value, expected_cursor: T)
 where
     T: PartialEq + std::fmt::Debug,
     C: serde::de::DeserializeOwned + serde::Serialize + std::ops::Deref<Target = T>,
 {
     // JSON -> Cursor
-    let cursor: C = serde_json::from_value(input.clone()).unwrap();
+    let cursor: C = serde_json::from_value(json.clone()).unwrap();
 
-    assert_eq!(*cursor, expected_inner);
+    assert_eq!(*cursor, expected_cursor, "deserialization failed");
 
     // Cursor -> JSON
-    let output = serde_json::to_value(&cursor).unwrap();
+    let json = serde_json::to_value(&cursor).unwrap();
 
-    assert_eq!(input, output);
+    // JSON -> Cursor
+    let cursor_2: C = serde_json::from_value(json).unwrap();
+
+    // The property that we care about is that we can repeatedly serialize
+    // and deserialize JSON to cursor and then back.
+    assert_eq!(*cursor, *cursor_2, "roundtrip failed");
 }
 
 #[test]
@@ -30,6 +35,50 @@ fn deep_field_path() {
     assert_roundtrip::<i32, Cursor!(a.b.c)>(json, 100);
 }
 
+macro_rules! test_range {
+    ($range:tt, $expected:tt) => {{
+        let json = json!([[0], [1], [2], [3], [4]]);
+
+        assert_roundtrip::<Vec<i32>, Cursor!($range[0])>(json, vec! $expected);
+
+        let json = json!({ "foo": [{ "item": 0 }, { "item": 1 }, { "item": 2 }, { "item": 3 }, { "item": 4 }] });
+
+        assert_roundtrip::<Vec<i32>, Cursor!(foo $range.item)>(json, vec! $expected);
+    }};
+}
+
+const X: usize = 1;
+
+#[test]
+fn range() {
+    test_range!([1..3], [1, 2]);
+    test_range!([X..2 + X], [1, 2]);
+}
+
+#[test]
+fn range_inclusive() {
+    test_range!([1..=3], [1, 2, 3]);
+    test_range!([X..=2 + X], [1, 2, 3]);
+}
+
+#[test]
+fn range_to() {
+    test_range!([..3], [0, 1, 2]);
+    test_range!([..2 + X], [0, 1, 2]);
+}
+
+#[test]
+fn range_to_inclusive() {
+    test_range!([..=3], [0, 1, 2, 3]);
+    test_range!([..=2 + X], [0, 1, 2, 3]);
+}
+
+#[test]
+fn range_from() {
+    test_range!([1..], [1, 2, 3, 4]);
+    test_range!([0 + X..], [1, 2, 3, 4]);
+}
+
 #[test]
 fn array_index_path() {
     // indices create null-padding for preceding elements during serialization
@@ -37,7 +86,7 @@ fn array_index_path() {
         "arr": [null, null, "found me"]
     });
 
-    assert_roundtrip::<String, Cursor!(arr.2)>(json, "found me".to_string());
+    assert_roundtrip::<String, Cursor!(arr[2])>(json, "found me".to_string());
 }
 
 #[test]
@@ -67,7 +116,7 @@ fn index_all_collection() {
         { "val": 20 }
     ]);
 
-    assert_roundtrip::<Vec<i32>, Cursor!(*.val)>(json, vec![10, 20]);
+    assert_roundtrip::<Vec<i32>, Cursor!([].val)>(json, vec![10, 20]);
 }
 
 #[test]
@@ -79,7 +128,7 @@ fn mixed_nested_path() {
         ]
     });
 
-    assert_roundtrip::<String, Cursor!(users.1.meta.id)>(json, "uuid-1".to_string());
+    assert_roundtrip::<String, Cursor!(users[1].meta.id)>(json, "uuid-1".to_string());
 }
 
 #[test]
@@ -96,7 +145,7 @@ fn nested_index_all() {
         vec!["C".to_string()],
     ];
 
-    assert_roundtrip::<Vec<Vec<String>>, Cursor!(groups.*.members.*.name)>(json, expected);
+    assert_roundtrip::<Vec<Vec<String>>, Cursor!(groups[].members[].name)>(json, expected);
 }
 
 #[test]
@@ -107,5 +156,5 @@ fn complex_index_all_objects() {
             { "info": { "code": 2 } }
         ]
     });
-    assert_roundtrip::<Vec<i32>, Cursor!(data.*.info.code)>(json, vec![1, 2]);
+    assert_roundtrip::<Vec<i32>, Cursor!(data[].info.code)>(json, vec![1, 2]);
 }

@@ -28,7 +28,7 @@ fn test_error_index_all_index_tracking() {
         { "typo": "bob" }
     ]);
 
-    let result = from_value::<Cursor!(*.name: Vec<String>)>(data);
+    let result = from_value::<Cursor!([].name: Vec<String>)>(data);
     let err = result.unwrap_err().to_string();
 
     assert_eq!(err, "[1].name: missing field 'name'");
@@ -44,7 +44,7 @@ fn test_error_deep_index_all_mismatch() {
             ]
         }
     });
-    let result = from_value::<Cursor!(org.users.*.id: Vec<i32>)>(data);
+    let result = from_value::<Cursor!(org.users[].id: Vec<i32>)>(data);
     let err = result.unwrap_err().to_string();
 
     assert_eq!(
@@ -58,7 +58,7 @@ fn type_mismatch_error() {
     let json = json!({ "a": { "not_an_array": 42 } });
 
     // path expects an array at index 0, but finds a map
-    let result = serde_json::from_value::<Cursor!(a.0: i32)>(json);
+    let result = serde_json::from_value::<Cursor!(a[1]: i32)>(json);
 
     assert!(result.is_err());
 }
@@ -72,6 +72,6 @@ fn empty_json_behaviors() {
 
     // index into empty array
     let json_empty_arr = json!({"arr": []});
-    let cursor_idx: Result<Cursor!(arr.5: i32), _> = serde_json::from_value(json_empty_arr);
+    let cursor_idx: Result<Cursor!(arr[5]: i32), _> = serde_json::from_value(json_empty_arr);
     assert!(cursor_idx.is_err());
 }

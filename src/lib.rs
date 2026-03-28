@@ -161,7 +161,7 @@
 //! # "#;
 //! # use serde_cursor::Cursor;
 //! # let ferris: String = toml::from_str::<
-//! Cursor!(package.0.name)
+//! Cursor!(package[0].name)
 //! # >(file)?.0;
 //! # Ok(()) }
 //! ```
@@ -456,7 +456,7 @@
 //!
 //! ```rust
 //! # /*
-//! Cursor!(package.*.dependencies.0: String)
+//! Cursor!(package[].dependencies[0]: String)
 //! # */
 //! ```
 //!
@@ -517,25 +517,41 @@
 //! Once the path is empty, we finally get to the type of the field - the `String` in the above example,
 //! and finally call [`serde::Deserialize::deserialize()`](https://docs.rs/serde/latest/serde/trait.Deserialize.html#tymethod.deserialize) on that, to finish things off -
 //! this `String` is then bubbled up the stack and returned from `<Cursor<String, _> as serde::Deserialize>::deserialize`.
+#![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(doc, feature(doc_cfg))]
 #![allow(rustdoc::invalid_rust_codeblocks)]
 
-mod de;
+#[cfg(feature = "alloc")]
+extern crate alloc;
+
+pub(crate) mod de;
 mod path_segment;
-mod ser;
+pub(crate) mod ser;
+
+mod index;
 
 #[doc(hidden, inline)]
 pub use cursor::Cursor;
 #[doc(hidden, inline)]
 pub use de::DeserializePath;
 #[doc(hidden, inline)]
+pub use index::range::Range;
+#[doc(hidden, inline)]
+pub use index::range_from::RangeFrom;
+#[doc(hidden, inline)]
+pub use index::range_full::RangeFull;
+#[doc(hidden, inline)]
+pub use index::range_inclusive::RangeInclusive;
+#[doc(hidden, inline)]
+pub use index::range_to::RangeTo;
+#[doc(hidden, inline)]
+pub use index::range_to_inclusive::RangeToInclusive;
+#[doc(hidden, inline)]
 pub use path_segment::ConstPathSegment;
 #[doc(hidden, inline)]
 pub use path_segment::Field;
 #[doc(hidden, inline)]
 pub use path_segment::Index;
-#[doc(hidden, inline)]
-pub use path_segment::IndexAll;
 #[doc(hidden, inline)]
 pub use path_segment::PathSegment;
 #[doc(hidden, inline)]
@@ -646,9 +662,17 @@ pub mod implementation_details {
     #[doc(inline)]
     pub use crate::Index;
     #[doc(inline)]
-    pub use crate::IndexAll;
-    #[doc(inline)]
     pub use crate::PathEnd;
+    #[doc(inline)]
+    pub use crate::Range;
+    #[doc(inline)]
+    pub use crate::RangeFull;
+    #[doc(inline)]
+    pub use crate::RangeInclusive;
+    #[doc(inline)]
+    pub use crate::RangeTo;
+    #[doc(inline)]
+    pub use crate::RangeToInclusive;
     #[doc(inline)]
     pub use crate::Sequence;
     #[doc(inline)]
