@@ -215,7 +215,9 @@
 //!     fn parse(value: &[u8]) -> serde_json::Result<Self> {
 //!         macro_rules! get {
 //!             ($($cursor:tt)*) => {
-//!                 serde_json::from_slice::<Cursor!($($cursor)*)>(value).map(|it| it.0)
+//!                 serde_json::from_slice::<
+//!                     Cursor!($($cursor)*)
+//!                 >(value).map(|it| it.0)
 //!             };
 //!         }
 //!
